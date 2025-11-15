@@ -32,32 +32,36 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
     }
 
-// CORRECTED AND IMPROVED VERSION
+// --- projection.js (CORRECT AND FINAL VERSION) ---
 
 function calculateAndCacheAnalysis() {
-    // This line runs all the complex calculations.
+    // This line CORRECTLY reads from the global mbsData variable,
+    // which was loaded from the original 'mbsData' in local storage.
     cachedAnalysis = CoreAnalysis.calculateAll(mbsData);
 
-    // This block saves the result into a separate local storage item.
+    // This block saves the calculated results into a NEW, ISOLATED storage item
+    // to avoid any conflicts with other tools.
     try {
-        // This is a special function to handle complex data types like 'Set'
+        // A helper function to safely convert complex data types for storage.
         const replacer = (key, value) => {
             if (value instanceof Set) {
-                return Array.from(value); // Convert Set to an Array for saving
+                return Array.from(value); // Convert Set to an Array
             }
             return value;
         };
 
-        // Now we use the replacer to safely save the data
-        localStorage.setItem('mbsAnalysisCache', JSON.stringify(cachedAnalysis, replacer));
+        // *** THE ONLY CHANGE IS HERE ***
+        // We are saving to 'mbsProjectionCache' instead of 'mbsAnalysisCache'.
+        localStorage.setItem('mbsProjectionCache', JSON.stringify(cachedAnalysis, replacer));
         
-        console.log("Analysis results have been safely saved to local storage under 'mbsAnalysisCache'.");
+        console.log("Analysis results have been safely saved to 'mbsProjectionCache'.");
 
     } catch (e) {
-        console.error("Could not save analysis results to local storage.", e);
+        console.error("Could not save projection analysis results to local storage.", e);
     }
-} // <--- Notice there is only ONE closing brace for the function.
+}
 
+    
     // --- DATA & SETTINGS MANAGEMENT ---
     function loadSettings() {
         const settings = mbsData.settings || {};
