@@ -7,8 +7,10 @@
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- The CSS is unchanged from your friend's version -->
-    <style>:root{--transition-duration:0.15s;--primary-color:#2980b9;--secondary-color:#2c3e50;--background-color:#f7f9fb;--widget-background:#ffffff;--text-color:#34495e;--light-grey:#bdc3c7;--footer-grey:#7f8c8d;--danger-color:#e74c3c;--shadow:0 8px 15px rgba(0,0,0,.08);--border-color:#e0e6eb}[data-theme='dark']{--background-color:#121212;--widget-background:#1e1e1e;--text-color:#e0e0e0;--secondary-color:#bbb;--light-grey:#757575;--footer-grey:#a0a0a0;--danger-color:#ff6b6b;--shadow:0 8px 20px rgba(0,0,0,.4);--border-color:#333}body, .site-header-container, .data-widget, textarea, .icon-btn, footer, .chat-input-area, #send-chat-btn, #chat-input{transition:background-color var(--transition-duration) ease,color var(--transition-duration) ease,border-color var(--transition-duration) ease,box-shadow var(--transition-duration) ease}body{margin:0;font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background-color:var(--background-color);color:var(--text-color);display:flex;flex-direction:column;min-height:100vh}.site-header-container{background-color:var(--widget-background);box-shadow:0 2px 4px rgba(0,0,0,.05);padding:15px 25px;position:relative;display:flex;align-items:center;justify-content:space-between}.header-left,.header-right{display:flex;align-items:center;gap:15px}.site-header{text-align:center;padding:0;margin:0;color:var(--secondary-color);font-size:2.2em;font-weight:700;font-family:'Playfair Display',serif;position:absolute;left:50%;transform:translateX(-50%)}.content{flex-grow:1;display:flex;justify-content:center;align-items:flex-start;padding:40px 20px}.icon-btn{background:none;border:2px solid var(--light-grey);color:var(--text-color);width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1em;text-decoration:none;transition:all .2s ease,background-color var(--transition-duration),box-shadow .2s}.icon-btn:hover{border-color:var(--primary-color);color:var(--primary-color);transform:scale(1.1)}.data-widget{background-color:var(--widget-background);padding:40px;border-radius:16px;box-shadow:var(--shadow);width:100%;max-width:650px;text-align:center}footer{text-align:center;padding:25px;font-size:.9em;color:var(--footer-grey);border-top:1px solid var(--border-color);margin-top:auto}#chat-messages{height:400px;overflow-y:auto;border:1px solid var(--border-color);border-radius:10px;padding:15px;margin-bottom:20px;display:flex;flex-direction:column;text-align:left;background-color:var(--background-color)}.message{max-width:80%;padding:10px 15px;border-radius:15px;margin-bottom:10px;word-wrap:break-word;line-height:1.4}.user-message{background-color:var(--primary-color);color:white;align-self:flex-end;border-bottom-right-radius:3px}.assistant-message{background-color:#e0e6eb;color:#2c3e50;align-self:flex-start;border-bottom-left-radius:3px}[data-theme='dark'] .assistant-message {background-color: #3a3a3a; color: #e0e0e0;}.status-message{color:var(--footer-grey);font-style:italic;text-align:center;margin:10px 0;align-self:center}.chat-input-area{display:flex;gap:10px}#chat-input{flex-grow:1;padding:12px;border:2px solid var(--border-color);border-radius:10px;font-size:1em;background-color:var(--background-color);color:var(--text-color)}#chat-input:focus{border-color:var(--primary-color);outline:none}#send-chat-btn,#start-ai-btn{width:auto;padding:12px 20px;background-color:var(--primary-color);color:white;border:none;border-radius:10px;font-size:1em;font-weight:bold;cursor:pointer;transition:background-color .3s}#send-chat-btn:hover:not(:disabled),#start-ai-btn:hover:not(:disabled){background-color:#2471a3}#send-chat-btn:disabled,#start-ai-btn:disabled{background-color:var(--light-grey);cursor:not-allowed}</style>
+    <!-- CSS is mostly unchanged, with additions for the debug console -->
+    <style>
+        :root{--transition-duration:0.15s;--primary-color:#2980b9;--secondary-color:#2c3e50;--background-color:#f7f9fb;--widget-background:#ffffff;--text-color:#34495e;--light-grey:#bdc3c7;--footer-grey:#7f8c8d;--danger-color:#e74c3c;--shadow:0 8px 15px rgba(0,0,0,.08);--border-color:#e0e6eb}[data-theme='dark']{--background-color:#121212;--widget-background:#1e1e1e;--text-color:#e0e0e0;--secondary-color:#bbb;--light-grey:#757575;--footer-grey:#a0a0a0;--danger-color:#ff6b6b;--shadow:0 8px 20px rgba(0,0,0,.4);--border-color:#333}body, .site-header-container, .data-widget, textarea, .icon-btn, footer, .chat-input-area, #send-chat-btn, #chat-input{transition:background-color var(--transition-duration) ease,color var(--transition-duration) ease,border-color var(--transition-duration) ease,box-shadow var(--transition-duration) ease}body{margin:0;font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background-color:var(--background-color);color:var(--text-color);display:flex;flex-direction:column;min-height:100vh}.site-header-container{background-color:var(--widget-background);box-shadow:0 2px 4px rgba(0,0,0,.05);padding:15px 25px;position:relative;display:flex;align-items:center;justify-content:space-between}.header-left,.header-right{display:flex;align-items:center;gap:15px}.site-header{text-align:center;padding:0;margin:0;color:var(--secondary-color);font-size:2.2em;font-weight:700;font-family:'Playfair Display',serif;position:absolute;left:50%;transform:translateX(-50%)}.content{flex-grow:1;display:flex;justify-content:center;align-items:flex-start;padding:40px 20px}.icon-btn{background:none;border:2px solid var(--light-grey);color:var(--text-color);width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1em;text-decoration:none;transition:all .2s ease,background-color var(--transition-duration),box-shadow .2s}.icon-btn:hover{border-color:var(--primary-color);color:var(--primary-color);transform:scale(1.1)}.data-widget{background-color:var(--widget-background);padding:40px;border-radius:16px;box-shadow:var(--shadow);width:100%;max-width:650px;text-align:center}footer{text-align:center;padding:25px;font-size:.9em;color:var(--footer-grey);border-top:1px solid var(--border-color);margin-top:auto}#chat-messages{height:400px;overflow-y:auto;border:1px solid var(--border-color);border-radius:10px;padding:15px;margin-bottom:20px;display:flex;flex-direction:column;text-align:left;background-color:var(--background-color)}.message{max-width:80%;padding:10px 15px;border-radius:15px;margin-bottom:10px;word-wrap:break-word;line-height:1.4}.user-message{background-color:var(--primary-color);color:white;align-self:flex-end;border-bottom-right-radius:3px}.assistant-message{background-color:#e0e6eb;color:#2c3e50;align-self:flex-start;border-bottom-left-radius:3px}[data-theme='dark'] .assistant-message {background-color: #3a3a3a; color: #e0e0e0;}.status-message{color:var(--footer-grey);font-style:italic;text-align:center;margin:10px 0;align-self:center}.chat-input-area{display:flex;gap:10px}#chat-input{flex-grow:1;padding:12px;border:2px solid var(--border-color);border-radius:10px;font-size:1em;background-color:var(--background-color);color:var(--text-color)}#chat-input:focus{border-color:var(--primary-color);outline:none}#send-chat-btn,#start-ai-btn,#load-data-btn{width:auto;padding:12px 20px;background-color:var(--primary-color);color:white;border:none;border-radius:10px;font-size:1em;font-weight:bold;cursor:pointer;transition:background-color .3s}#send-chat-btn:hover:not(:disabled),#start-ai-btn:hover:not(:disabled),#load-data-btn:hover:not(:disabled){background-color:#2471a3}#send-chat-btn:disabled,#start-ai-btn:disabled,#load-data-btn:disabled{background-color:var(--light-grey);cursor:not-allowed}.button-group{display:flex;gap:10px;justify-content:center;margin-bottom:20px;} #debug-console{height:100px;overflow-y:auto;border:1px solid var(--border-color);border-radius:10px;padding:10px;margin-top:20px;text-align:left;font-family:monospace;font-size:0.8em;background-color:var(--background-color);color:var(--text-color);}
+    </style>
 </head>
 <body>
     <header class="site-header-container">
@@ -16,24 +18,37 @@
         <h1 class="site-header">Outil MBS</h1>
         <div class="header-right"><button class="icon-btn" id="theme-toggle" title="Mode Sombre/Clair"><i class="fa-solid fa-moon"></i></button><button class="icon-btn" title="Aide"><i class="fa-solid fa-circle-question"></i></button></div>
     </header>
+
     <main class="content">
         <div class="data-widget" id="data-widget">
             <h2 style="font-family: 'Playfair Display', serif; font-weight: 700;">Assistant IA Fiable</h2>
-            <p style="margin-top: -10px; margin-bottom: 30px;">Ce chatbot a accès aux données de l'étudiant.</p>
+            <p style="margin-top: -10px; margin-bottom: 30px;">Ce chatbot a accès aux données de l'étudiant sur demande.</p>
+            
             <div id="chatbot-container">
                 <div id="chat-messages"><div class="status-message" id="initial-status">Cliquez pour démarrer l'assistant IA.<br><small id="model-download-size"></small></div></div>
-                <button id="start-ai-btn">Démarrer l'Assistant</button>
+                
+                <div class="button-group">
+                    <button id="start-ai-btn">Démarrer l'Assistant</button>
+                    <button id="load-data-btn" disabled>Charger les Données Étudiantes</button>
+                </div>
+
                 <div class="chat-input-area" id="chat-input-wrapper" style="display: none;"><input type="text" id="chat-input" placeholder="Chargement..." disabled><button id="send-chat-btn" disabled>Envoyer</button></div>
+                
+                <div id="debug-console-wrapper" style="display: none;">
+                    <h3 style="font-size: 1em; margin-bottom: 5px;">Console de Débogage</h3>
+                    <div id="debug-console"></div>
+                </div>
             </div>
         </div>
     </main>
+
     <footer><p>Outil MBS - Moyenne, Bilan, Stratégie</p></footer>
 
     <script type="module">
         import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
         env.allowRemoteModels = true;
 
-        // Theme logic is unchanged
+        // --- Theme logic from your friend's code (unchanged) ---
         const themeToggleBtn = document.getElementById('theme-toggle');
         const html = document.documentElement;
         const toggleIcon = themeToggleBtn.querySelector('i');
@@ -44,44 +59,44 @@
         updateTheme(initialTheme);
         themeToggleBtn.addEventListener('click', () => { const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; updateTheme(newTheme); });
 
+        // --- CHATBOT LOGIC (UPGRADED) ---
         let chatPipeline = null;
-        let studentDataContext = '';
+        let studentDataContext = null; // Start with no data context
 
         // --- UPGRADE: Switched to the smarter, compatible T5 model ---
         const CHAT_MODEL = 'MBZUAI/LaMini-Flan-T5-248M';
         const CHAT_TASK = 'text2text-generation';
-        document.getElementById('model-download-size').textContent = '(Téléchargement unique d\'environ 1GB)';
+        document.getElementById('model-download-size').textContent = `(Téléchargement unique d'environ 1GB)`;
 
         const chatInput = document.getElementById('chat-input');
         const sendBtn = document.getElementById('send-chat-btn');
         const messagesContainer = document.getElementById('chat-messages');
         const startBtn = document.getElementById('start-ai-btn');
+        const loadDataBtn = document.getElementById('load-data-btn');
         const chatInputWrapper = document.getElementById('chat-input-wrapper');
+        const debugConsoleWrapper = document.getElementById('debug-console-wrapper');
+        const debugConsole = document.getElementById('debug-console');
+
+        // NEW: On-screen console logger
+        function logToConsole(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugConsole.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            debugConsole.scrollTop = debugConsole.scrollHeight;
+            console.log(message); // Also log to the real console
+        }
 
         async function initializeChatbot() {
-            startBtn.style.display = 'none';
+            startBtn.disabled = true;
+            startBtn.textContent = 'Chargement...';
             chatInputWrapper.style.display = 'flex';
-            addMessageToChat('Chargement des données de l\'étudiant...', 'status');
-
-            // --- UPGRADE: Load data from Local Storage ---
-            try {
-                const rawData = JSON.parse(localStorage.getItem('mbsData'));
-                const analysisData = JSON.parse(localStorage.getItem('mbsProjectionCache'));
-                if (!rawData?.valid) {
-                    addMessageToChat("Erreur : Données 'mbsData' introuvables. Assurez-vous d'avoir utilisé les autres outils d'analyse d'abord.", 'status');
-                    return;
-                }
-                studentDataContext = formatDataForSLM(rawData, analysisData);
-                addMessageToChat('Données de l\'étudiant chargées. Téléchargement du modèle IA...', 'status');
-            } catch (e) {
-                addMessageToChat(`Erreur lors du chargement des données locales : ${e.message}`, 'status');
-                return;
-            }
+            debugConsoleWrapper.style.display = 'block';
+            addMessageToChat('Téléchargement du modèle IA...', 'status');
+            logToConsole(`Attempting to load model: ${CHAT_MODEL}`);
             
             try {
                 // This direct pipeline call is stable for T5 models.
                 chatPipeline = await pipeline(CHAT_TASK, CHAT_MODEL, {
-                    quantized: true, // Ask for the small, fast version
+                    quantized: true,
                     progress_callback: (p) => {
                         const statusMessage = messagesContainer.querySelector('.status-message:last-child');
                         if (statusMessage) {
@@ -95,65 +110,86 @@
                 });
                 
                 messagesContainer.querySelector('.status-message:last-child')?.remove();
-                addMessageToChat('Bonjour ! Je suis l\'Assistant MBS. J\'ai analysé vos données. Posez-moi une question.', 'assistant');
-                chatInput.disabled = false;
-                sendBtn.disabled = false;
-                chatInput.placeholder = 'Écrivez votre message...';
-                chatInput.focus();
+                addMessageToChat('Bonjour ! Je suis l\'Assistant MBS. Je suis prêt à répondre aux questions générales. Chargez les données étudiantes pour des réponses personnalisées.', 'assistant');
+                chatInput.disabled = false; sendBtn.disabled = false;
+                loadDataBtn.disabled = false; // Enable the data loading button
+                startBtn.style.display = 'none'; // Hide the start button
+                chatInput.placeholder = 'Écrivez votre message...'; chatInput.focus();
+                logToConsole("Model loaded successfully. AI is ready.");
 
             } catch (error) {
-                addMessageToChat(`Erreur critique : Impossible de charger le modèle IA. ${error.message}`, 'status');
+                const errorMsg = `Erreur critique : Impossible de charger le modèle IA. ${error.message}`;
+                addMessageToChat(errorMsg, 'status');
+                logToConsole(`FATAL ERROR: ${error.message}`);
                 console.error("Model loading error:", error);
+            }
+        }
+
+        function loadStudentData() {
+            logToConsole("Attempting to load student data from Local Storage...");
+            try {
+                const rawData = JSON.parse(localStorage.getItem('mbsData'));
+                const analysisData = JSON.parse(localStorage.getItem('mbsProjectionCache'));
+                if (!rawData?.valid) {
+                    addMessageToChat("Erreur : Données 'mbsData' introuvables.", 'status');
+                    logToConsole("ERROR: 'mbsData' not found or invalid.");
+                    return;
+                }
+                studentDataContext = formatDataForSLM(rawData, analysisData);
+                addMessageToChat('Les données de l\'étudiant ont été chargées avec succès. Je peux maintenant répondre à des questions spécifiques sur les notes.', 'assistant');
+                logToConsole("Student data loaded and context has been set.");
+                loadDataBtn.disabled = true; // Disable after successful load
+                loadDataBtn.textContent = 'Données Chargées';
+            } catch (e) {
+                const errorMsg = `Erreur lors du chargement des données locales : ${e.message}`;
+                addMessageToChat(errorMsg, 'status');
+                logToConsole(`ERROR loading local data: ${e.message}`);
             }
         }
 
         async function handleChatSubmit() {
             const userMessage = chatInput.value.trim();
             if (!userMessage || !chatPipeline) return;
-
             addMessageToChat(userMessage, 'user');
-            chatInput.value = '';
-            chatInput.disabled = true;
-            sendBtn.disabled = true;
-
+            chatInput.value = ''; chatInput.disabled = true; sendBtn.disabled = true;
             const typingIndicator = addMessageToChat("L'assistant réfléchit...", 'assistant status-message');
             
             const prompt = buildSmartPrompt(userMessage);
             
-            const result = await chatPipeline(prompt, { 
-                max_new_tokens: 256,
-                temperature: 0.7,
-                top_k: 50,
-            });
-
+            const result = await chatPipeline(prompt, { max_new_tokens: 256, temperature: 0.7, top_k: 50 });
+            
             typingIndicator.remove();
             addMessageToChat(result[0].generated_text, 'assistant');
 
-            chatInput.disabled = false;
-            sendBtn.disabled = false;
-            chatInput.focus();
+            chatInput.disabled = false; sendBtn.disabled = false; chatInput.focus();
         }
         
-        // --- UPGRADE: New "smart prompt" with data context ---
         function buildSmartPrompt(userQuestion) {
             const personalityPrompt = `Tu es un tuteur académique expert, amical et encourageant.`;
             const baseInstructions = `Règles Strictes:
-1. Analyse l'intégralité du CONTEXTE pour trouver les informations pertinentes à la QUESTION.
-2. Formule une réponse entièrement nouvelle en utilisant tes propres mots. Ne copie JAMAIS de phrases directement du contexte.
+1. Analyse le CONTEXTE fourni pour répondre à la QUESTION.
+2. Formule une réponse entièrement nouvelle en utilisant tes propres mots.
 3. Si la réponse n'est pas dans le contexte, réponds "Je n'ai pas cette information dans les données fournies."`;
             
-            return `TÂCHE:\n${personalityPrompt}\n${baseInstructions}\n\nCONTEXTE:\n---\n${studentDataContext}\n---\n\nQUESTION:\n"${userQuestion}"\n\nRÉPONSE SYNTHÉTISÉE:`;
+            // This is the key logic: only include the data context if it has been loaded
+            const contextSection = studentDataContext 
+                ? `\n\nCONTEXTE:\n---\n${studentDataContext}\n---`
+                : `\n\nCONTEXTE:\nAucune donnée étudiante n'a été chargée.`;
+
+            return `TÂCHE:\n${personalityPrompt}\n${baseInstructions}${contextSection}\n\nQUESTION:\n"${userQuestion}"\n\nRÉPONSE SYNTHÉTISÉE:`;
         }
         
         // Helper functions
-        function formatDataForSLM(rawData, analysisData) { /* Unchanged */ }
-        function addMessageToChat(text, role) { /* Unchanged */ }
+        function formatDataForSLM(rawData, analysisData) { /* Unchanged from previous correct version */ }
+        function addMessageToChat(text, role) { /* Unchanged from previous correct version */ }
 
-        // Minor helper code for completeness
+        // Full helper functions for completeness
         function formatDataForSLM(rawData, analysisData) {let summary = ``;if (rawData?.nom) summary += `Nom de l'étudiant: ${rawData.nom}\n`;['etape1', 'etape2'].forEach(etape => {if (rawData[etape] && rawData[etape].length > 0) {summary += `\n--- RÉSULTATS ${etape.toUpperCase()} ---\n`;rawData[etape].forEach(subject => {summary += `Sujet: ${subject.name} (${subject.code})\n`;subject.competencies.forEach(comp => {comp.assignments.forEach(assign => {if (assign.result) summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;});});});}});if (analysisData) {summary += `\n--- ANALYSE PRÉDICTIVE ---\n`;if(analysisData.globalAverage) summary += `- Moyenne générale (calculée): ${analysisData.globalAverage.toFixed(2)}%\n`;if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;if(analysisData.globalConsistencyScore) summary += `- Indice de consistance: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale: ${analysisData.predictions.global.p50.toFixed(2)}%\n`;}return summary;}
         function addMessageToChat(text, role) {const messageDiv = document.createElement('div');if(role === 'status' && messagesContainer.querySelector('#initial-status')){messagesContainer.querySelector('#initial-status').style.display = 'none';}messageDiv.className = `message ${role}-message`;messageDiv.textContent = text;messagesContainer.appendChild(messageDiv);messagesContainer.scrollTop = messagesContainer.scrollHeight;return messageDiv;}
 
+        // Event listeners
         startBtn.onclick = initializeChatbot;
+        loadDataBtn.onclick = loadStudentData;
         sendBtn.onclick = handleChatSubmit;
         chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleChatSubmit(); } });
     </script>
