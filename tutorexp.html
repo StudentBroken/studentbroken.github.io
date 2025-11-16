@@ -3,126 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tuteur Académique IA (Final)</title>
-    <!-- CSS is unchanged and is omitted here for brevity -->
-    <style>:root{--user-color:#007bff;--tutor-color:#f1f1f1;--background-color:#ffffff;--text-color:#212529;--border-color:#dee2e6}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;display:flex;flex-direction:column;height:100vh;background-color:var(--background-color);color:var(--text-color)}#header{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1.5rem;border-bottom:1px solid var(--border-color);background-color:var(--background-color);flex-shrink:0}#header h1{font-size:1.25rem;margin:0}#status{font-size:.8rem;color:#6c757d}.ai-mode-toggle{display:flex;align-items:center;gap:.5rem}.switch{position:relative;display:inline-block;width:100px;height:34px}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#ccc;transition:.4s;border-radius:34px}.slider:before{position:absolute;content:"";height:26px;width:26px;left:4px;bottom:4px;background-color:white;transition:.4s;border-radius:50%}input:checked+.slider{background-color:var(--user-color)}input:checked+.slider:before{transform:translateX(66px)}.slider:after{content:'Tuteur';color:white;display:block;position:absolute;transform:translate(-50%,-50%);top:50%;left:30%;font-size:12px}input:checked+.slider:after{content:'Analyste';left:70%}#chat-container{flex-grow:1;padding:1rem 1.5rem;overflow-y:auto;display:flex;flex-direction:column;gap:1rem}.message{padding:10px 18px;border-radius:22px;max-width:80%;line-height:1.5;word-wrap:break-word}.user-message{background-color:var(--user-color);color:white;align-self:flex-end}.tutor-message{background-color:var(--tutor-color);color:var(--text-color);align-self:flex-start}.tutor-message.loading::after{content:'...';display:inline-block;animation:dots 1.5s infinite steps(3,end)}@keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}#input-area{display:flex;padding:1rem 1.5rem;border-top:1px solid var(--border-color);background-color:rgba(255,255,255,.8);backdrop-filter:blur(10px)}#user-input{flex-grow:1;border:1px solid #ccc;border-radius:22px;padding:10px 18px;font-size:1rem;resize:none}#send-btn{background-color:var(--user-color);color:white;border:none;border-radius:50%;width:44px;height:44px;margin-left:10px;font-size:1.5rem;cursor:pointer;transition:background-color .2s;display:flex;align-items:center;justify-content:center}#send-btn:disabled{background-color:#a0a0a0;cursor:not-allowed}</style>
-</head>
-<body>
-    <div id="header">
-        <div><h1>Extremely smart AI</h1><div id="status">Chargement...</div></div>
-        <div class="ai-mode-toggle"><label class="switch"><input type="checkbox" id="ai-mode-checkbox"><span class="slider"></span></label></div>
-    </div>
-    <div id="chat-container"></div>
-    <div id="input-area"><input type="text" id="user-input" placeholder="Posez une question..." disabled><button id="send-btn" disabled>&#9658;</button></div>
-
-    <script type="module">
-        // --- THIS IS THE STABLE V3 LOADING SCRIPT ---
-        import { pipeline, AutoTokenizer, AutoModelForSeq2SeqLM } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
-        
-        const status = document.getElementById('status');
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const aiModeCheckbox = document.getElementById('ai-mode-checkbox');
-
-        let tutorPipeline = null;
-        let studentDataContext = '';
-        let currentAiMode = 'tuteur';
-
-        // --- NEW, HYPER-DETAILED PROMPTS ---
-        const PROMPT_TUTEUR = `Tu es un tuteur académique expert, amical et encourageant. Ton rôle est de synthétiser les données fournies pour répondre à la question de l'étudiant de manière utile, personnalisée et facile à comprendre.`;
-        const PROMPT_ANALYSTE = `Tu es un analyste de données logique et objectif. Ton rôle est d'extraire et de présenter les faits pertinents des données fournies pour répondre à la question de manière factuelle, chiffrée et concise. N'utilise aucun langage émotionnel ou d'opinion.`;
-        const BASE_INSTRUCTIONS = `Règles Strictes et Obligatoires:
-1. Analyse l'intégralité du CONTEXTE pour trouver les informations pertinentes à la QUESTION.
-2. Formule une réponse entièrement nouvelle en utilisant tes propres mots. Ne copie JAMAIS de phrases directement du contexte.
-3. Ta réponse doit être une synthèse cohérente, pas une simple liste de données.
-4. Si la réponse n'est pas dans le contexte, réponds UNIQUEMENT: "Je n'ai pas cette information dans les données fournies."
-5. Sois concis et va droit au but.`;
-        // --- END OF NEW PROMPTS ---
-
-        // Helper functions (addMessage, formatDataForSLM) are unchanged
-        function addMessage(text, sender) {const messageDiv = document.createElement('div');messageDiv.classList.add('message', `${sender}-message`);messageDiv.textContent = text;chatContainer.appendChild(messageDiv);chatContainer.scrollTop = chatContainer.scrollHeight;return messageDiv;}
-        function formatDataForSLM(rawData, analysisData) {let summary = ``;if (rawData?.nom) summary += `Nom de l'étudiant: ${rawData.nom}\n`;['etape1', 'etape2'].forEach(etape => {if (rawData[etape] && rawData[etape].length > 0) {summary += `\n--- RÉSULTATS ${etape.toUpperCase()} ---\n`;rawData[etape].forEach(subject => {summary += `Sujet: ${subject.name} (${subject.code})\n`;subject.competencies.forEach(comp => {comp.assignments.forEach(assign => {if (assign.result) summary += `- Travail: "${assign.work}", Résultat: ${assign.result}\n`;});});});}});if (analysisData) {summary += `\n--- ANALYSE PRÉDICTIVE ---\n`;if(analysisData.globalAverage) summary += `- Moyenne générale (calculée): ${analysisData.globalAverage.toFixed(2)}%\n`;if(analysisData.burnoutRiskScore) summary += `- Score de risque de burnout: ${analysisData.burnoutRiskScore.toFixed(0)}/100\n`;if(analysisData.globalConsistencyScore) summary += `- Indice de consistance: ${analysisData.globalConsistencyScore.toFixed(0)}/100\n`;if(analysisData.predictions?.global?.p50) summary += `- Prédiction de la moyenne finale: ${analysisData.predictions.global.p50.toFixed(2)}%\n`;}return summary;}
-
-        async function handleSend() {
-            const query = userInput.value.trim();
-            if (query === '' || !tutorPipeline) return;
-            addMessage(query, 'user');
-            userInput.value = '';
-            
-            const loadingMessage = addMessage("Réflexion en cours...", 'tutor');
-            loadingMessage.classList.add('loading');
-            
-            const personalityPrompt = currentAiMode === 'tuteur' ? PROMPT_TUTEUR : PROMPT_ANALYSTE;
-            
-            // This is the improved prompt that forces the AI to be smart
-            const fullPrompt = `TÂCHE:\n${personalityPrompt}\n${BASE_INSTRUCTIONS}\n\nCONTEXTE:\n---\n${studentDataContext}\n---\n\nQUESTION:\n"${query}"\n\nRÉPONSE SYNTHÉTISÉE:`;
-
-            try {
-                const result = await tutorPipeline(fullPrompt, {
-                    max_new_tokens: 300,
-                    temperature: 0.7,
-                    top_k: 50,
-                    do_sample: true,
-                });
-                loadingMessage.textContent = result[0].generated_text;
-                loadingMessage.classList.remove('loading');
-            } catch (e) {
-                loadingMessage.textContent = "Désolé, une erreur est survenue.";
-                console.error("Inference error:", e);
-            }
+    <title>Assistant IA Fiable - Outil MBS</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root {
+            --transition-duration: 0.15s;
+            --primary-color: #2980b9;
+            --secondary-color: #2c3e50;
+            --background-color: #f7f9fb;
+            --widget-background: #ffffff;
+            --text-color: #34495e;
+            --light-grey: #bdc3c7;
+            --footer-grey: #7f8c8d;
+            --danger-color: #e74c3c;
+            --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+            --border-color: #e0e6eb;
         }
 
-        async function main() {
+        [data-theme='dark'] {
+            --background-color: #121212;
+            --widget-background: #1e1e1e;
+            --text-color: #e0e0e0;
+            --secondary-color: #bbbbbb;
+            --light-grey: #757575;
+            --footer-grey: #a0a0a0;
+            --danger-color: #ff6b6b;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            --border-color: #333333;
+        }
+
+        body, .site-header-container, .data-widget, textarea, .icon-btn, footer, .chat-input-area, #send-chat-btn, #chat-input {
+            transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
+        }
+        
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .site-header-container {
+            background-color: var(--widget-background);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 15px 25px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-left, .header-right { display: flex; align-items: center; gap: 15px; }
+        .site-header {
+            text-align: center; padding: 0; margin: 0; color: var(--secondary-color);
+            font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
+            position: absolute; left: 50%; transform: translateX(-50%);
+        }
+        .content {
+            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start;
+            padding: 40px 20px;
+        }
+        
+        .icon-btn {
+            background: none; border: 2px solid var(--light-grey); color: var(--text-color);
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.1em;
+            text-decoration: none;
+            transition: all 0.2s ease, background-color var(--transition-duration), box-shadow 0.2s;
+        }
+        .icon-btn:hover {
+            border-color: var(--primary-color); color: var(--primary-color); transform: scale(1.1);
+        }
+
+        .data-widget {
+            background-color: var(--widget-background); padding: 40px; border-radius: 16px;
+            box-shadow: var(--shadow); width: 100%; max-width: 650px; text-align: center;
+        }
+        
+        footer {
+            text-align: center; padding: 25px; font-size: 0.9em;
+            color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: auto;
+        }
+        
+        #chat-messages {
+            height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column;
+            text-align: left; background-color: var(--background-color);
+        }
+        .message { max-width: 80%; padding: 10px 15px; border-radius: 15px; margin-bottom: 10px; word-wrap: break-word; line-height: 1.4;}
+        .user-message { 
+            background-color: var(--primary-color); color: white;
+            align-self: flex-end; border-bottom-right-radius: 3px; 
+        }
+        .assistant-message { 
+            background-color: #e0e6eb; color: #2c3e50;
+            align-self: flex-start; border-bottom-left-radius: 3px; 
+        }
+        .status-message { 
+            color: var(--footer-grey); font-style: italic; text-align: center; margin: 10px 0; align-self: center;
+        }
+        .chat-input-area { display: flex; gap: 10px; }
+        #chat-input { 
+            flex-grow: 1; padding: 12px; border: 2px solid var(--border-color); border-radius: 10px; font-size: 1em; 
+            background-color: var(--background-color); color: var(--text-color);
+        }
+        #chat-input:focus { border-color: var(--primary-color); outline: none; }
+        #send-chat-btn, #start-ai-btn { 
+            width: auto; padding: 12px 20px; background-color: var(--primary-color);
+            color: white; border: none; border-radius: 10px; font-size: 1em; font-weight: bold;
+            cursor: pointer; transition: background-color 0.3s;
+        }
+        #send-chat-btn:hover:not(:disabled), #start-ai-btn:hover:not(:disabled) { background-color: #2471a3; }
+        #send-chat-btn:disabled, #start-ai-btn:disabled { background-color: var(--light-grey); cursor: not-allowed; }
+
+    </style>
+</head>
+<body>
+
+    <header class="site-header-container">
+        <div class="header-left">
+             <a href="#" class="icon-btn" title="Retour">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+        </div>
+        <h1 class="site-header">Outil MBS</h1>
+        <div class="header-right">
+            <button class="icon-btn" id="theme-toggle" title="Mode Sombre/Clair">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            <button class="icon-btn" title="Aide">
+                <i class="fa-solid fa-circle-question"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="content">
+        <div class="data-widget" id="data-widget">
+            <h2 style="font-family: 'Playfair Display', serif; font-weight: 700;">Assistant IA Fiable</h2>
+            <p style="margin-top: -10px; margin-bottom: 30px;">Ce chatbot est fiable et n'a pas de mémoire de conversation pour éviter les erreurs.</p>
+            
+            <div id="chatbot-container">
+                <div id="chat-messages">
+                    <div class="status-message" id="initial-status">Cliquez sur le bouton pour démarrer l'assistant IA.<br><small>(Téléchargement unique d'environ 300MB)</small></div>
+                </div>
+                <button id="start-ai-btn">Démarrer l'Assistant</button>
+                <div class="chat-input-area" id="chat-input-wrapper" style="display: none;">
+                    <input type="text" id="chat-input" placeholder="Chargement de l'IA..." disabled>
+                    <button id="send-chat-btn" disabled>Envoyer</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Outil MBS - Moyenne, Bilan, Stratégie</p>
+    </footer>
+
+    <script type="module">
+        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
+
+        // --- THEME LOGIC ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const toggleIcon = themeToggleBtn.querySelector('i');
+        const THEME_KEY = 'mbs-theme';
+
+        const updateTheme = (theme) => {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem(THEME_KEY, theme);
+            toggleIcon.classList.toggle('fa-sun', theme === 'dark');
+            toggleIcon.classList.toggle('fa-moon', theme !== 'dark');
+        };
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        updateTheme(initialTheme);
+        themeToggleBtn.addEventListener('click', () => {
+            const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            updateTheme(newTheme);
+        });
+
+        // --- CHATBOT LOGIC ---
+        let chatPipeline = null;
+        
+        const CHAT_MODEL = 'Xenova/LaMini-Flan-T5-77M';
+
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-chat-btn');
+        const messagesContainer = document.getElementById('chat-messages');
+        const startBtn = document.getElementById('start-ai-btn');
+        const chatInputWrapper = document.getElementById('chat-input-wrapper');
+
+        async function initializeChatbot() {
+            startBtn.style.display = 'none';
+            chatInputWrapper.style.display = 'flex';
+            addMessageToChat('Chargement du modèle IA... Ceci peut prendre un moment lors du premier lancement.', 'status');
+            
             try {
-                const rawData = JSON.parse(localStorage.getItem('mbsData'));
-                if (!rawData?.valid) { status.textContent = "Données 'mbsData' introuvables."; return; }
-                studentDataContext = formatDataForSLM(rawData, JSON.parse(localStorage.getItem('mbsProjectionCache')));
-
-                // This is the model from the version that WORKED.
-                const model_id = 'Xenova/LaMini-Flan-T5-77M';
-                const task = 'text2text-generation';
-                
-                // --- WE USE THE STABLE MANUAL ASSEMBLY PROCESS THAT WORKED ---
-                status.textContent = "Étape 1/3 : Chargement du tokenizer...";
-                const tokenizer = await AutoTokenizer.from_pretrained(model_id);
-
-                status.textContent = "Étape 2/3 : Chargement du modèle principal...";
-                // This is the loading function that WORKED.
-                const model = await AutoModelForSeq2SeqLM.from_pretrained(model_id, {
-                    quantized: true, // Ask for the small version
-                    progress_callback: (p) => {
-                        // This robust callback handles all status updates without crashing.
-                        if (p.file) {
-                            status.textContent = `Chargement... (${p.file.split('/').pop()}: ${Math.round(p.progress)}%)`;
-                        } else if (p.status) {
-                            status.textContent = `Chargement... (${p.status}: ${Math.round(p.progress)}%)`;
+                chatPipeline = await pipeline('text2text-generation', CHAT_MODEL, {
+                    progress_callback: (progress) => {
+                        const statusMessage = messagesContainer.querySelector('.status-message');
+                        if (statusMessage) {
+                             statusMessage.textContent = `Chargement du modèle : ${progress.file} (${Math.round(progress.progress)}%)`;
                         }
                     }
                 });
-
-                status.textContent = "Étape 3/3 : Assemblage du pipeline...";
-                tutorPipeline = await pipeline(task, model, { tokenizer });
                 
-                status.textContent = `Bonjour, ${rawData.nom}! Je suis prêt.`;
-                userInput.disabled = false;
+                messagesContainer.innerHTML = ''; 
+                addMessageToChat('Bonjour ! Je suis l\'Assistant MBS. Posez-moi une question.', 'assistant');
+                chatInput.disabled = false;
                 sendBtn.disabled = false;
-                addMessage(`J'ai analysé vos données. Comment puis-je vous aider aujourd'hui ?`, 'tutor');
+                chatInput.placeholder = 'Écrivez votre message...';
+                chatInput.focus();
 
-            } catch (e) {
-                status.textContent = "Erreur critique. Vérifiez la console (F12).";
-                console.error("CRITICAL ERROR in main():", e);
+            } catch (error) {
+                addMessageToChat(`Erreur : Impossible de charger le modèle IA. ${error.message}`, 'status');
+                console.error("Model loading error:", error);
             }
         }
 
-        // Event listeners are unchanged
-        sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
-        aiModeCheckbox.addEventListener('change', (e) => {
-            currentAiMode = e.target.checked ? 'analyste' : 'tuteur';
+        async function handleChatSubmit() {
+            const userMessage = chatInput.value.trim();
+            if (!userMessage || !chatPipeline) return;
+
+            addMessageToChat(userMessage, 'user');
+            chatInput.value = '';
+            chatInput.disabled = true;
+            sendBtn.disabled = true;
+
+            const typingIndicator = addMessageToChat("L'assistant réfléchit...", 'assistant status-message');
+            
+            // The AI is stateless, so we only need the user's current message.
+            const prompt = buildStatelessPrompt(userMessage);
+            
+            const result = await chatPipeline(prompt, { 
+                max_new_tokens: 256,
+                temperature: 0.7,
+                top_k: 50,
+            });
+
+            const assistantResponse = result[0].generated_text;
+            
+            typingIndicator.remove();
+            addMessageToChat(assistantResponse, 'assistant');
+
+            chatInput.disabled = false;
+            sendBtn.disabled = false;
+            chatInput.focus();
+        }
+
+        // --- FINAL, STATELESS PROMPT ---
+        function buildStatelessPrompt(userQuestion) {
+            const systemPrompt = `Système: Vous êtes l'Assistant MBS.
+Règles:
+1. Votre nom est Assistant MBS.
+2. Répondez de manière utile et directe en français.
+3. Pour les maths, commencez par 'Calcul :', puis expliquez, et donnez la réponse finale.
+---
+User: ${userQuestion}
+Assistant:`;
+            return systemPrompt;
+        }
+
+        function addMessageToChat(text, role) {
+            const messageDiv = document.createElement('div');
+            if (role === 'status' && messagesContainer.querySelector('#initial-status')) {
+                messagesContainer.innerHTML = '';
+            }
+            messageDiv.className = `message ${role}-message`;
+            messageDiv.textContent = text;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            return messageDiv;
+        }
+
+        startBtn.onclick = initializeChatbot;
+        sendBtn.onclick = handleChatSubmit;
+        chatInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleChatSubmit();
+            }
         });
-        
-        main();
+
     </script>
 </body>
 </html>
+message.txt
+14 KB
