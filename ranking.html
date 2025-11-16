@@ -121,7 +121,7 @@
             for (const key in averages.term) { if (averages.term[key] !== null) formData.append(key, averages.term[key].toFixed(2)); }
             for (const key in averages.subjects) { if (averages.subjects[key] !== null) formData.append(key, averages.subjects[key].toFixed(2)); }
 
-            logToConsole(`Sending data for user: ${mbsData.nom}`);
+            logToConsole(`UserID successfully hashed. Sending data to sheets`);
             try {
                 const postResponse = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
                 if (!postResponse.ok) throw new Error(`POST request failed: ${postResponse.statusText}`);
