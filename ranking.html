@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classement - Outil MBS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- CSS is a mix of the old and new styles -->
+    <!-- CSS is a combination of your old working version and the new styles -->
     <style>
         :root {--primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f7f9fb; --widget-background: #ffffff; --text-color: #34495e; --light-grey: #e0e6eb; --danger-color: #e74c3c; --success-color: #27ae60; --shadow-widget: 0 10px 20px rgba(0, 0, 0, 0.07);}
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); }
@@ -16,7 +16,9 @@
         select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; background-color: white; font-size: 1em; }
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
         .stat-widget { background: var(--widget-background); border-radius: 16px; padding: 25px; box-shadow: var(--shadow-widget); border: 1px solid var(--light-grey); display: flex; flex-direction: column; }
-        .widget-header { text-align: center; margin-bottom: 20px; }
+        .main-avg-widget { grid-column: span 2; }
+        .graph-widget, .subject-table-widget { grid-column: 1 / -1; }
+        .widget-header { text-align: center; margin-bottom: 15px; }
         .widget-title { font-size: 1.1em; font-weight: bold; color: var(--secondary-color); margin: 0 0 10px 0; }
         .widget-value { font-size: 3.5em; font-weight: 700; }
         .widget-rank { font-size: 1.2em; font-weight: 600; color: var(--secondary-color); }
@@ -26,10 +28,9 @@
         .item-rank { width:45px; font-weight:600; }
         .item-name { font-weight:normal; }
         .item-grade { margin-left:auto; font-weight:600; }
-        .graph-widget, .subject-table-widget { grid-column: 1 / -1; }
         .error-message { text-align: center; padding: 40px; font-size: 1.2em; color: var(--danger-color); background-color: #fdd; border: 1px solid var(--danger-color); border-radius: 8px; }
         #debug-console { margin-top:30px; background: #2c3e50; color:#ecf0f1; border-radius:10px; padding:15px; font-family:monospace; height:150px; overflow-y:auto; font-size:0.9em; display:none; }
-        .subject-table { width: 100%; border-collapse: collapse; }
+        .subject-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         .subject-table th, .subject-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--light-grey); }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -38,24 +39,25 @@
     <div class="site-header-container"><header class="site-header">Classements</header></div>
     <main class="main-container">
         <div class="controls">
-            <label for="level-select">Afficher le classement pour :</label>
-            <select id="level-select"></select>
+            <label for="term-select">Comparer les moyennes pour :</label>
+            <select id="term-select"></select>
         </div>
         <div id="dashboard-container">
-            <!-- Content will be injected here -->
+            <div class="error-message" id="status-message" style="display: block;">Synchronisation...</div>
         </div>
         <div id="debug-console"></div>
     </main>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxt_KYDgHMyyv2eoOmRV27tB9d9TMKt5Ckq7NSf7iqtzPgaurb5F9xv2pwJgTBErH0S/exec';
+        const SCRIPT_URL = 'PASTE_YOUR_WEB_APP_URL_HERE';
         const subjectNames = { 'ART':"Arts", 'MUS':"Musique", 'DRM':"Art Dram.", 'CAT':"Tech", 'FRA':"Français", 'ELA':"Anglais", 'EESL':"Anglais Enrichi", 'ESL':"Anglais Second", 'SN':"Math SN", 'CST':"Math CST", 'ST':"Science", 'STE':"Science (STE)", 'HQC':"Histoire", 'CCQ':"Citoyenneté", 'EPS':"É. Phys.", 'CHI':"Chimie", 'PHY':"Physique", 'MON':"Monde Cont.", 'MED':"Média", 'ENT':"Entreprenariat", 'INF':"Informatique", 'PSY':"Psychologie", 'FIN':"Finance" };
         const overallNames = { 'GlobalAverage':"Moyenne Globale", 'Etape1Average':"Étape 1", 'Etape2Average':"Étape 2", 'Etape3Average':"Étape 3" };
         const TERM_WEIGHTS = { etape1:0.20, etape2:0.20, etape3:0.60 };
 
         const dashboardContainer = document.getElementById('dashboard-container');
         const debugConsole = document.getElementById('debug-console');
-        const levelSelect = document.getElementById('level-select');
+        const termSelect = document.getElementById('term-select');
+        const statusMessage = document.getElementById('status-message');
 
         function logToConsole(message, isError = false) { /* ... */ }
         document.addEventListener('DOMContentLoaded', initialize);
@@ -68,78 +70,117 @@
             const mbsData = JSON.parse(localStorage.getItem('mbsData'));
             if (!mbsData?.valid || !mbsData?.nom || !mbsData?.settings?.niveau) { showError("mbsData, nom, or niveau not found in Local Storage."); return; }
             
-            const userLevel = mbsData.settings.niveau;
-            levelSelect.innerHTML = `<option value="sec4">Secondaire 4</option><option value="sec5">Secondaire 5</option>`;
-            levelSelect.value = userLevel;
-            
             logToConsole("Calculating local averages...");
             const averages = calculateAveragesFromRawData(mbsData);
             const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom)));
             
             const formData = new FormData();
             formData.append('encodedName', encodedName);
-            formData.append('secondaryLevel', userLevel);
+            formData.append('secondaryLevel', mbsData.settings.niveau);
             formData.append('Timestamp', new Date().toISOString());
             for (const key in averages.term) { if (averages.term[key] !== null) formData.append(key, averages.term[key].toFixed(2)); }
             for (const key in averages.subjects) { if (averages.subjects[key] !== null) formData.append(key, averages.subjects[key].toFixed(2)); }
 
-            logToConsole(`Sending data for user: ${mbsData.nom} (${userLevel})`);
+            logToConsole(`Sending data for user: ${mbsData.nom}`);
             try {
-                // Step 1: Send (POST) data
+                // Step 1: Send (POST) data using the reliable FormData method
                 const postResponse = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
                 if (!postResponse.ok) throw new Error(`POST request failed: ${postResponse.statusText}`);
                 const postResult = await postResponse.json();
                 if (postResult.result !== 'success') throw new Error(`Failed to save data: ${postResult.error}`);
                 logToConsole("Data sent successfully.");
 
-                // Step 2: Get (GET) all data
-                logToConsole("Fetching leaderboard data...");
+                // Step 2: Get (GET) all data back to calculate ranks
+                logToConsole("Fetching full leaderboard data...");
                 const getResponse = await fetch(SCRIPT_URL);
                 if (!getResponse.ok) throw new Error(`GET request failed: ${getResponse.statusText}`);
                 const allUsersData = await getResponse.json();
                 if (allUsersData.result === 'error') throw new Error(`Failed to get data: ${allUsersData.error}`);
                 logToConsole(`Received data for ${allUsersData.length} users.`);
 
-                const renderAndAttachListener = () => renderDashboard(allUsersData, encodedName, levelSelect.value);
-                levelSelect.addEventListener('change', renderAndAttachListener);
-                renderAndAttachListener(); // Initial render
+                statusMessage.style.display = 'none';
+                
+                // Populate dropdown and render
+                populateDropdown(averages.term, averages.subjects);
+                const renderAndAttachListener = () => renderDashboard(allUsersData, encodedName, mbsData.settings.niveau);
+                termSelect.addEventListener('change', renderAndAttachListener);
+                renderAndAttachListener();
 
             } catch (error) {
                 showError(`Communication error with ranking server: ${error.message}`);
             }
         }
+        
+        function populateDropdown(termAvgs, subjectAvgs) {
+            let optionsHTML = '';
+            for (const key in overallNames) {
+                if (termAvgs[key] !== null) optionsHTML += `<option value="${key}">${overallNames[key]}</option>`;
+            }
+            optionsHTML += `<optgroup label="Matières">`;
+            for (const key in subjectAvgs) {
+                if(subjectNames[key]) optionsHTML += `<option value="${key}">${subjectNames[key]}</option>`;
+            }
+            optionsHTML += `</optgroup>`;
+            termSelect.innerHTML = optionsHTML;
+        }
 
-        function renderDashboard(allUsersData, currentUserEncodedName, selectedLevel) {
-            const levelData = allUsersData.filter(d => d.secondaryLevel === selectedLevel);
+        function renderDashboard(allUsersData, currentUserEncodedName, userLevel) {
+            const selectedKey = termSelect.value;
+            const selectedText = termSelect.options[termSelect.selectedIndex].text;
+            
+            const levelData = allUsersData.filter(d => d.secondaryLevel === userLevel);
             const currentUserData = levelData.find(d => d.encodedName === currentUserEncodedName);
 
             if (!currentUserData) {
-                showError(`Vos données n'ont pas été trouvées dans le classement pour ${selectedLevel}.`);
+                showError(`Vos données n'ont pas été trouvées dans le classement pour ${userLevel}.`);
                 return;
             }
-
-            const mainWidgetHTML = createStatWidgetHTML('Moyenne Globale', 'GlobalAverage', levelData, currentUserData);
-            const etape1WidgetHTML = createStatWidgetHTML('Étape 1', 'Etape1Average', levelData, currentUserData);
-            const etape2WidgetHTML = createStatWidgetHTML('Étape 2', 'Etape2Average', levelData, currentUserData);
-            const etape3WidgetHTML = createStatWidgetHTML('Étape 3', 'Etape3Average', levelData, currentUserData);
+            
+            const mainWidgetHTML = createMainWidgetHTML(selectedText, selectedKey, levelData, currentUserData);
             const subjectsHTML = createSubjectsTableHTML(levelData, currentUserData);
             
             dashboardContainer.innerHTML = `
                 <div class="dashboard-grid">
                     ${mainWidgetHTML}
-                    ${etape1WidgetHTML}
-                    ${etape2WidgetHTML}
-                    ${etape3WidgetHTML}
                     <div class="stat-widget subject-table-widget">${subjectsHTML}</div>
                 </div>
             `;
+            
+            // Re-center leaderboard scroll
+            const leaderboardContainer = document.querySelector('.mini-leaderboard-container');
+            if (leaderboardContainer) {
+                const userItem = leaderboardContainer.querySelector('.is-user');
+                if (userItem) {
+                    const containerHeight = leaderboardContainer.clientHeight;
+                    const itemHeight = userItem.offsetHeight;
+                    leaderboardContainer.scrollTop = userItem.offsetTop - (containerHeight / 2) + (itemHeight / 2);
+                }
+            }
         }
         
-        function createStatWidgetHTML(title, key, levelData, currentUserData) {
+        function createMainWidgetHTML(title, key, levelData, currentUserData) {
             const ranks = getRank(levelData, key, currentUserData.encodedName);
             const userValue = parseFloat(currentUserData[key]);
-            if (!ranks.rank || isNaN(userValue)) return ''; // Don't show card if no rank/data
-            return `<div class="stat-widget">
+
+            if (!ranks.rank || isNaN(userValue)) {
+                return `<div class="stat-widget main-avg-widget"><div class="widget-header"><h3 class="widget-title">${title}</h3><div style="font-size:1.5em; color: var(--light-grey);">Données insuffisantes pour classer.</div></div></div>`;
+            }
+
+            const getTrophy = (rank) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`);
+            const leaderboardItemsHTML = levelData
+                .filter(u => u[key] && !isNaN(parseFloat(u[key])))
+                .sort((a, b) => b[key] - a[key])
+                .map((user, index) => {
+                    const rank = index + 1;
+                    const isCurrentUser = user.encodedName === currentUserData.encodedName;
+                    return `<li class="leaderboard-item ${isCurrentUser ? 'is-user' : ''}">
+                                <span class="item-rank">${getTrophy(rank)}</span>
+                                <span class="item-name">${isCurrentUser ? 'Vous' : `Utilisateur ${rank}`}</span>
+                                <span class="item-grade">${parseFloat(user[key]).toFixed(1)}%</span>
+                            </li>`;
+                }).join('');
+
+            return `<div class="stat-widget main-avg-widget">
                         <div class="widget-header">
                             <h3 class="widget-title">${title}</h3>
                             <div class="widget-value">${userValue.toFixed(1)}%</div>
@@ -148,35 +189,28 @@
                                 <span style="color:${getPercentileColor(ranks.percentile)}; margin-left: 8px;">(Top ${ranks.percentile}%)</span>
                             </div>
                         </div>
+                        <div class="mini-leaderboard-container" style="overflow-y:auto; max-height:200px;">
+                            <ul class="leaderboard-list">${leaderboardItemsHTML}</ul>
+                        </div>
                     </div>`;
         }
 
-        function createSubjectsTableHTML(levelData, currentUserData) {
-            let subjectsHTML = '<table class="subject-table"><thead><tr><th>Matière</th><th>Votre Moyenne</th><th>Classement</th><th>Top Percentile</th></tr></thead><tbody>';
-            const subjectKeys = Object.keys(currentUserData).filter(k => k.length === 3 && subjectNames[k]);
-            subjectKeys.sort((a,b) => (subjectNames[a] || a).localeCompare(subjectNames[b] || b));
-            subjectKeys.forEach(key => {
-                const ranks = getRank(levelData, key, currentUserData.encodedName);
-                const userValue = parseFloat(currentUserData[key]);
-                if (!ranks.rank || isNaN(userValue)) return;
-                subjectsHTML += `<tr>
-                    <td>${subjectNames[key] || key}</td>
-                    <td>${userValue.toFixed(1)}%</td>
-                    <td>${ranks.rank} sur ${ranks.total}</td>
-                    <td style="color:${getPercentileColor(ranks.percentile)}; font-weight:600;">Top ${ranks.percentile}%</td>
-                </tr>`;
-            });
-            subjectsHTML += '</tbody></table>';
-            return subjectsHTML;
-        }
-
-        // Helper functions (unchanged from previous correct versions)
-        function getRank(levelData, key, currentUserEncodedName) { const scores = levelData.map(row => parseFloat(row[key])).filter(score => !isNaN(score)); scores.sort((a, b) => b - a); const currentUser = levelData.find(d => d.encodedName === currentUserEncodedName); const currentUserValue = currentUser ? parseFloat(currentUser[key]) : NaN; const rank = scores.indexOf(currentUserValue) + 1; const percentile = (scores.length > 0) ? (scores.length - rank + 1) / scores.length * 100 : 0; return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? percentile.toFixed(1) : null }; }
+        function createSubjectsTableHTML(levelData, currentUserData) { /* Unchanged from previous version */ }
+        function getRank(levelData, key, currentUserEncodedName) { /* Unchanged */ }
+        function showError(message) { /* Unchanged */ }
+        function getPercentileColor(p) { /* Unchanged */ }
+        function calculateAveragesFromRawData(data) { /* Unchanged */ }
+        function getNumericGrade(result) { /* Unchanged */ }
+        
+        // Full helper functions
+        function logToConsole(message, isError = false) { debugConsole.style.display = 'block'; const timestamp = new Date().toLocaleTimeString(); const color = isError ? 'style="color: #e74c3c;"' : ''; debugConsole.innerHTML += `<div>[${timestamp}] <span ${color}>${message}</span></div>`; debugConsole.scrollTop = debugConsole.scrollHeight; (isError ? console.error : console.log)(message); }
         function showError(message) { dashboardContainer.innerHTML = `<div class="error-message">${message}</div>`; logToConsole(message, true); }
         function getPercentileColor(p) { if (p <= 10) return 'var(--success-color)'; if (p <= 25) return 'var(--primary-color)'; if (p <= 50) return '#f39c12'; return 'var(--danger-color)'; }
-        function logToConsole(message, isError = false) { debugConsole.style.display = 'block'; const timestamp = new Date().toLocaleTimeString(); const color = isError ? 'style="color: #e74c3c;"' : ''; debugConsole.innerHTML += `<div>[${timestamp}] <span ${color}>${message}</span></div>`; debugConsole.scrollTop = debugConsole.scrollHeight; (isError ? console.error : console.log)(message); }
         function calculateAveragesFromRawData(data) {let termAverages = {GlobalAverage:null, Etape1Average: null, Etape2Average: null, Etape3Average: null}; let allSubjectAverages = {}; let subjectCounts = {}; ['etape1', 'etape2', 'etape3'].forEach(etape => { if (!data[etape]) return; let termSubjectAverages = []; data[etape].forEach(subject => { let subjectTotal = 0, subjectWeight = 0; subject.competencies.forEach(comp => { const compWeightMatch = comp.name.match(/\((\d+)%\)/); if (!compWeightMatch) return; const compWeight = parseFloat(compWeightMatch[1]); let compTotal = 0, compAssignWeight = 0; comp.assignments.forEach(assign => { const grade = getNumericGrade(assign.result); const weight = parseFloat(assign.pond); if (grade !== null && !isNaN(weight) && weight > 0) { compTotal += grade * weight; compAssignWeight += weight; } }); if (compAssignWeight > 0) { subjectTotal += (compTotal / compAssignWeight) * (compWeight / 100); subjectWeight += (compWeight / 100); } }); if (subjectWeight > 0) { const subjectAverage = subjectTotal / subjectWeight; termSubjectAverages.push(subjectAverage); const code = subject.code.substring(0, 3); allSubjectAverages[code] = (allSubjectAverages[code] || 0) + subjectAverage; subjectCounts[code] = (subjectCounts[code] || 0) + 1; } }); if (termSubjectAverages.length > 0) { const etapeKey = 'Etape' + etape.slice(-1) + 'Average'; termAverages[etapeKey] = termSubjectAverages.reduce((a, b) => a + b, 0) / termSubjectAverages.length; } }); for (const code in allSubjectAverages) { allSubjectAverages[code] /= subjectCounts[code]; } let globalTotal = 0, globalWeight = 0; if(termAverages.Etape1Average !== null) {globalTotal += termAverages.Etape1Average * TERM_WEIGHTS.etape1; globalWeight += TERM_WEIGHTS.etape1}; if(termAverages.Etape2Average !== null) {globalTotal += termAverages.Etape2Average * TERM_WEIGHTS.etape2; globalWeight += TERM_WEIGHTS.etape2}; if(termAverages.Etape3Average !== null) {globalTotal += termAverages.Etape3Average * TERM_WEIGHTS.etape3; globalWeight += TERM_WEIGHTS.etape3}; if (globalWeight > 0) termAverages.GlobalAverage = globalTotal / globalWeight; return { term: termAverages, subjects: allSubjectAverages }; }
         function getNumericGrade(result) { if (!result) return null; const gradeMap = {'A+':100,'A':95,'A-':90,'B+':85,'B':80,'B-':75,'C+':70,'C':65,'C-':60,'D+':55,'D':50,'E':45}; const trimmed = result.trim(); if(gradeMap[trimmed]) return gradeMap[trimmed]; const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/); if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.')); const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/); if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const max = parseFloat(scoreMatch[2].replace(',', '.')); return (max > 0) ? (score / max) * 100 : null; } const plainNumber = parseFloat(trimmed); if(!isNaN(plainNumber) && plainNumber >=0 && plainNumber <= 110) return plainNumber; return null; }
+        function createSubjectsTableHTML(levelData, currentUserData) { let subjectsHTML = '<h2 style="text-align:center; margin-bottom:20px;">Classement par Matière</h2><table class="subject-table"><thead><tr><th>Matière</th><th>Votre Moyenne</th><th>Classement</th><th>Top Percentile</th></tr></thead><tbody>'; const subjectKeys = Object.keys(currentUserData).filter(k => k.length === 3 && subjectNames[k]); subjectKeys.sort((a,b) => (subjectNames[a] || a).localeCompare(subjectNames[b] || b)); subjectKeys.forEach(key => { const ranks = getRank(levelData, key, currentUserData.encodedName); const userValue = parseFloat(currentUserData[key]); if (!ranks.rank || isNaN(userValue) || ranks.total < 1) return; subjectsHTML += `<tr><td>${subjectNames[key] || key}</td><td>${userValue.toFixed(1)}%</td><td>${ranks.rank} sur ${ranks.total}</td><td style="color:${getPercentileColor(ranks.percentile)}; font-weight:600;">Top ${ranks.percentile}%</td></tr>`; }); subjectsHTML += '</tbody></table>'; return subjectsHTML; }
+        function getRank(levelData, key, currentUserEncodedName) { const scores = levelData.map(row => parseFloat(row[key])).filter(score => !isNaN(score)); scores.sort((a, b) => b - a); const currentUser = levelData.find(d => d.encodedName === currentUserEncodedName); const currentUserValue = currentUser ? parseFloat(currentUser[key]) : NaN; const rank = scores.indexOf(currentUserValue) + 1; const percentile = (scores.length > 0) ? (scores.length - rank + 1) / scores.length * 100 : 0; return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? percentile.toFixed(1) : null }; }
+
     </script>
 </body>
 </html>
