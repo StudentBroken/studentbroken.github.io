@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF--8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analyse - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
@@ -81,7 +81,7 @@
         .site-header-container { background-color: var(--widget-background); box-shadow: var(--shadow-header); border-bottom: 1px solid var(--border-color); padding: 15px 25px; display: flex; align-items: center; position: relative; margin-bottom: 0; }
         .header-left { flex: 1; display: flex; justify-content: flex-start; }
         .header-center { flex: 2; text-align: center; }
-        .header-right { flex: 1; display: flex; justify-content: flex-end; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; }
         .site-header { padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; display: inline-block; }
         .icon-btn { background: none; border: 2px solid var(--light-grey); color: var(--text-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; text-decoration: none; transition: all 0.2s ease, background-color var(--transition-duration), box-shadow 0.2s; }
         .icon-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: scale(1.1); }
@@ -110,7 +110,9 @@
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal-content, .order-editor-content { transform: scale(0.9) translateY(-20px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .modal-overlay.active .modal-content, .modal-overlay.active .order-editor-content { transform: scale(1) translateY(0); }
-        .btn-secondary { padding: 10px 15px; border: 1px solid var(--light-grey); background-color: transparent; color: var(--text-color); border-radius: 8px; cursor: pointer; }
+        .btn { text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; transition: all 0.2s ease; }
+        .btn-secondary { background-color: #2980b9; color: white; border: none; }
+        .btn-secondary:hover { background-color: #3498db; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .btn-primary { padding: 10px 15px; border: none; background-color: var(--success-color); color: white; border-radius: 8px; cursor: pointer; }
         
         /* Details Modal */
@@ -164,6 +166,7 @@
             <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème">
                 <i class="fa-solid fa-moon"></i>
             </button>
+            <a href="projection.html" class="btn btn-secondary">Projection des résultats</a>
         </div>
     </header>
 
