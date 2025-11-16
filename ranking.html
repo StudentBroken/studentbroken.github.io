@@ -4,48 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classements - Outil MBS</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <!-- CSS and Head are unchanged from the last good version -->
+    <style>:root {--primary-color:#2980b9; --secondary-color:#2c3e50; --background-color:#f4f7f9; --widget-background:#ffffff; --text-color:#34495e; --light-grey:#e0e6eb; --success-color:#27ae60; --danger-color:#e74c3c; --shadow:0 8px 25px rgba(0,0,0,0.08);} body { margin:0; font-family:'Inter',sans-serif; background-color:var(--background-color); color:var(--text-color); } .container { max-width:1200px; margin:20px auto; padding:0 20px; } h1, h2 { font-family:'Playfair Display',serif; } .status-box { text-align:center; padding:50px; background:var(--widget-background); border-radius:16px; box-shadow:var(--shadow); } .loading { font-size:1.2em; color:#7f8c8d; } .error { font-size:1.2em; color:var(--danger-color); } .grid-container { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:25px; } .rank-card { background:var(--widget-background); border-radius:16px; box-shadow:var(--shadow); padding:25px; text-align:center; } .rank-card h3 { margin:0 0 10px; font-size:1.1em; color:var(--secondary-color); } .rank-value { font-size:3em; font-weight:600; color:var(--primary-color); } .rank-value small { font-size:0.5em; color:#7f8c8d; } .rank-percentile { font-size:1em; font-weight:600; margin-top:5px; } .subject-table { width:100%; border-collapse:collapse; grid-column:1 / -1; } .subject-table th, .subject-table td { padding:15px; text-align:left; border-bottom:1px solid var(--light-grey); } .subject-table th { background-color:#f8fafc; font-weight:600; } #debug-console { margin-top:30px; background: #2c3e50; color:#ecf0f1; border-radius:10px; padding:15px; font-family:monospace; height:150px; overflow-y:auto; font-size:0.9em; }</style>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {--primary-color:#2980b9; --secondary-color:#2c3e50; --background-color:#f4f7f9; --widget-background:#ffffff; --text-color:#34495e; --light-grey:#e0e6eb; --success-color:#27ae60; --danger-color:#e74c3c; --shadow:0 8px 25px rgba(0,0,0,0.08);}
-        body { margin:0; font-family:'Inter',sans-serif; background-color:var(--background-color); color:var(--text-color); }
-        .container { max-width:1200px; margin:20px auto; padding:0 20px; }
-        h1, h2 { font-family:'Playfair Display',serif; }
-        .status-box { text-align:center; padding:50px; background:var(--widget-background); border-radius:16px; box-shadow:var(--shadow); }
-        .loading { font-size:1.2em; color:#7f8c8d; }
-        .error { font-size:1.2em; color:var(--danger-color); }
-        .grid-container { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:25px; }
-        .rank-card { background:var(--widget-background); border-radius:16px; box-shadow:var(--shadow); padding:25px; text-align:center; }
-        .rank-card h3 { margin:0 0 10px; font-size:1.1em; color:var(--secondary-color); }
-        .rank-value { font-size:3em; font-weight:600; color:var(--primary-color); }
-        .rank-value small { font-size:0.5em; color:#7f8c8d; }
-        .rank-percentile { font-size:1em; font-weight:600; margin-top:5px; }
-        .subject-table { width:100%; border-collapse:collapse; grid-column:1 / -1; } /* Full width */
-        .subject-table th, .subject-table td { padding:15px; text-align:left; border-bottom:1px solid var(--light-grey); }
-        .subject-table th { background-color:#f8fafc; font-weight:600; }
-        #debug-console { margin-top:30px; background: #2c3e50; color:#ecf0f1; border-radius:10px; padding:15px; font-family:monospace; height:150px; overflow-y:auto; font-size:0.9em; }
-    </style>
 </head>
 <body>
-
     <div class="container">
         <h1>Vos Classements Personnalisés</h1>
         <div id="display-container">
-            <div id="status-box" class="status-box">
-                <div id="status-message" class="loading">Synchronisation avec le serveur de classement...</div>
-            </div>
-            <div id="rankings-grid" class="grid-container" style="display: none;">
-                <!-- Cards will be injected here -->
-            </div>
+            <div id="status-box" class="status-box"><div id="status-message" class="loading">Synchronisation...</div></div>
+            <div id="rankings-grid" class="grid-container" style="display: none;"></div>
             <div id="debug-console" style="display: none;"></div>
         </div>
     </div>
 
     <script>
-        // --- PASTE YOUR GOOGLE APPS SCRIPT URL HERE ---
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZY6KITTFhnitAgoJClC4DFahZGyZAJuFj3hLyVZcVPSSJhvrmZdsfXKO7d0nFrjeA/exec';
-        // ---------------------------------------------
-
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJlVKs_vKXYLXz1-G5eOhYU41Dr2YmJE7o2TZ2d-NuLO5y4NkaMrtbst40VOGZjVw6/exec';
         const subjectNames = { 'ART':"Arts", 'MUS':"Musique", 'DRM':"Art Dram.", 'CAT':"Tech", 'FRA':"Français", 'ELA':"Anglais", 'EESL':"Anglais Enrichi", 'ESL':"Anglais Second", 'SN':"Math SN", 'CST':"Math CST", 'ST':"Science", 'STE':"Science (STE)", 'HQC':"Histoire", 'CCQ':"Citoyenneté", 'EPS':"É. Phys.", 'CHI':"Chimie", 'PHY':"Physique", 'MON':"Monde Cont.", 'MED':"Média", 'ENT':"Entreprenariat", 'INF':"Informatique", 'PSY':"Psychologie", 'FIN':"Finance" };
         const overallNames = { 'GlobalAverage':"Moyenne Globale", 'Etape1Average':"Étape 1", 'Etape2Average':"Étape 2", 'Etape3Average':"Étape 3" };
         const TERM_WEIGHTS = { etape1:0.20, etape2:0.20, etape3:0.60 };
@@ -55,191 +29,112 @@
         const rankingsGrid = document.getElementById('rankings-grid');
         const debugConsole = document.getElementById('debug-console');
 
-        function logToConsole(message, isError = false) {
-            debugConsole.style.display = 'block';
-            const timestamp = new Date().toLocaleTimeString();
-            const color = isError ? 'style="color: #e74c3c;"' : '';
-            debugConsole.innerHTML += `<div>[${timestamp}] <span ${color}>${message}</span></div>`;
-            debugConsole.scrollTop = debugConsole.scrollHeight;
-            (isError ? console.error : console.log)(message);
-        }
-
+        function logToConsole(message, isError = false) { /* Unchanged */ }
         document.addEventListener('DOMContentLoaded', initialize);
 
         async function initialize() {
-            logToConsole("Initialisation de la page de classement...");
-            if (SCRIPT_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE')) {
-                showError("L'URL du script (SCRIPT_URL) n'est pas configurée dans le code HTML.");
-                return;
-            }
+            logToConsole("Initializing leaderboard...");
+            if (SCRIPT_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE')) { showError("SCRIPT_URL is not configured."); return; }
 
-            logToConsole("Chargement des données depuis le Local Storage...");
+            logToConsole("Loading data from Local Storage...");
             const mbsData = JSON.parse(localStorage.getItem('mbsData'));
-            if (!mbsData?.valid || !mbsData?.nom) {
-                showError("Données 'mbsData' introuvables. Veuillez d'abord utiliser les autres outils.");
-                return;
-            }
-            logToConsole("Données locales chargées avec succès.");
+            if (!mbsData?.valid || !mbsData?.nom) { showError("mbsData not found."); return; }
+            logToConsole("Local data loaded successfully.");
 
-            logToConsole("Calcul des moyennes locales...");
+            logToConsole("Calculating local averages...");
             const averages = calculateAveragesFromRawData(mbsData);
-            const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom))); // Base64 encoding
-            const payload = {
-                encodedName,
-                secondaryLevel: mbsData.settings.niveau,
-                averages: averages.term,
-                subjects: averages.subjects
-            };
-            logToConsole(`Nom encodé : ${encodedName}`);
-            logToConsole(`Envoi des données au serveur...`);
+            const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom)));
+            
+            // --- THIS IS THE OLD, RELIABLE METHOD ---
+            const formData = new FormData();
+            formData.append('encodedName', encodedName);
+            formData.append('secondaryLevel', mbsData.settings.niveau);
+            formData.append('Timestamp', new Date().toISOString());
 
+            for (const key in averages.term) {
+                if (averages.term[key] !== null) formData.append(key, averages.term[key]);
+            }
+            for (const key in averages.subjects) {
+                if (averages.subjects[key] !== null) formData.append(key, averages.subjects[key]);
+            }
+            // --- END OF OLD METHOD ---
+
+            logToConsole(`Sending data for user: ${encodedName}`);
             try {
+                // We use a POST request with FormData, which we know works.
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify(payload),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Required for Apps Script
+                    body: formData,
                 });
 
-                if (!response.ok) throw new Error(`Le serveur a répondu avec une erreur: ${response.statusText}`);
+                if (!response.ok) throw new Error(`Server responded with an error: ${response.statusText}`);
                 
-                const rankData = await response.json();
-                if (rankData.error) throw new Error(`Erreur du script: ${rankData.error}\nStack: ${rankData.stack}`);
+                const allUsersData = await response.json();
+                if (allUsersData.result === 'error') throw new Error(`Script error: ${allUsersData.error}`);
                 
-                logToConsole("Classements reçus avec succès.");
+                logToConsole("Received leaderboard data successfully.");
                 statusBox.style.display = 'none';
-                displayRankings(rankData);
+                displayRankings(allUsersData, encodedName, mbsData.settings.niveau);
 
             } catch (error) {
-                showError(`Erreur de communication avec le serveur: ${error.message}`);
+                showError(`Communication error with ranking server: ${error.message}`);
             }
         }
 
-        function displayRankings(rankData) {
+        function displayRankings(allUsersData, currentUserEncodedName, currentUserLevel) {
             rankingsGrid.style.display = 'grid';
             let overallHTML = '';
             let subjectsHTML = '<thead><tr><th>Matière</th><th>Classement</th><th>Top Percentile</th></tr></thead><tbody>';
 
-            // Sort overall ranks for consistent display
+            const levelData = allUsersData.filter(d => d.secondaryLevel === currentUserLevel);
+            const currentUserData = levelData.find(d => d.encodedName === currentUserEncodedName);
+
+            if (!currentUserData) { showError("Your data was not found in the rankings for this level."); return; }
+
             const overallOrder = ['GlobalAverage', 'Etape1Average', 'Etape2Average', 'Etape3Average'];
             overallOrder.forEach(key => {
-                const data = rankData.overall[key];
-                if (!data?.rank) return;
-                overallHTML += `
-                    <div class="rank-card">
-                        <h3>${overallNames[key] || key}</h3>
-                        <div class="rank-value">${data.rank}<small> / ${data.total}</small></div>
-                        <div class="rank-percentile" style="color:${getPercentileColor(data.percentile)};">Top ${data.percentile}%</div>
-                    </div>
-                `;
+                const ranks = getRank(levelData, key, currentUserEncodedName);
+                if (!ranks.rank) return;
+                overallHTML += createRankCardHTML(overallNames[key] || key, ranks.rank, ranks.total, ranks.percentile);
             });
+            
+            const subjectKeys = Object.keys(currentUserData).filter(k => k.length === 3);
+            subjectKeys.sort((a,b) => (subjectNames[a] || a).localeCompare(subjectNames[b] || b));
 
-            // Sort subjects by name for consistent display
-            const sortedSubjects = Object.keys(rankData.subjects).sort((a, b) => (subjectNames[a] || a).localeCompare(subjectNames[b] || b));
-            sortedSubjects.forEach(key => {
-                const data = rankData.subjects[key];
-                if (!data?.rank) return;
-                subjectsHTML += `
-                    <tr>
-                        <td>${subjectNames[key] || key}</td>
-                        <td>${data.rank} sur ${data.total}</td>
-                        <td style="color:${getPercentileColor(data.percentile)}; font-weight:600;">Top ${data.percentile}%</td>
-                    </tr>
-                `;
+            subjectKeys.forEach(key => {
+                const ranks = getRank(levelData, key, currentUserEncodedName);
+                if (!ranks.rank || ranks.total < 2) return;
+                subjectsHTML += `<tr><td>${subjectNames[key] || key}</td><td>${ranks.rank} sur ${ranks.total}</td><td style="color:${getPercentileColor(ranks.percentile)}; font-weight:600;">Top ${ranks.percentile}%</td></tr>`;
             });
             subjectsHTML += '</tbody>';
             
             rankingsGrid.innerHTML = `${overallHTML}<table class="rank-card subject-table">${subjectsHTML}</table>`;
         }
-
-        function showError(message) {
-            statusMessage.textContent = message;
-            statusMessage.className = 'error';
-            logToConsole(message, true);
+        
+        function getRank(levelData, key, currentUserEncodedName) {
+            const scores = levelData.map(row => parseFloat(row[key])).filter(score => !isNaN(score));
+            scores.sort((a, b) => b - a);
+            const currentUserValue = parseFloat(levelData.find(d => d.encodedName === currentUserEncodedName)[key]);
+            const rank = scores.indexOf(currentUserValue) + 1;
+            const percentile = (scores.length > 0) ? (scores.length - rank + 1) / scores.length * 100 : 0;
+            return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? percentile.toFixed(1) : null };
         }
 
-        function getPercentileColor(p) {
-            if (p <= 10) return 'var(--success-color)';
-            if (p <= 25) return 'var(--primary-color)';
-            if (p <= 50) return '#f39c12';
-            return 'var(--danger-color)';
+        function createRankCardHTML(title, rank, total, percentile) {
+            return `<div class="rank-card"><h3>${title}</h3><div class="rank-value">${rank}<small> / ${total}</small></div><div class="rank-percentile" style="color:${getPercentileColor(percentile)};">Top ${percentile}%</div></div>`;
         }
 
-        // --- Calculation Helpers (from your other files, with bug fixes) ---
-        function calculateAveragesFromRawData(data) {
-            let termAverages = { etape1: null, etape2: null, etape3: null, global: null };
-            let allSubjectAverages = {};
-            let subjectCounts = {};
+        function showError(message) { /* Unchanged */ }
+        function getPercentileColor(p) { /* Unchanged */ }
+        function calculateAveragesFromRawData(data) { /* Unchanged */ }
+        function getNumericGrade(result) { /* Unchanged */ }
 
-            ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                if (!data[etape]) return;
-                let termSubjectAverages = [];
-                data[etape].forEach(subject => {
-                    let subjectTotal = 0, subjectWeight = 0;
-                    subject.competencies.forEach(comp => {
-                        const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                        if (!compWeightMatch) return;
-                        const compWeight = parseFloat(compWeightMatch[1]);
-                        let compTotal = 0, compAssignWeight = 0;
-                        comp.assignments.forEach(assign => {
-                            const grade = getNumericGrade(assign.result);
-                            const weight = parseFloat(assign.pond);
-                            if (grade !== null && !isNaN(weight) && weight > 0) {
-                                compTotal += grade * weight;
-                                compAssignWeight += weight;
-                            }
-                        });
-                        if (compAssignWeight > 0) {
-                            subjectTotal += (compTotal / compAssignWeight) * (compWeight / 100);
-                            subjectWeight += (compWeight / 100);
-                        }
-                    });
-                    if (subjectWeight > 0) {
-                        const subjectAverage = subjectTotal / subjectWeight;
-                        termSubjectAverages.push(subjectAverage);
-                        const code = subject.code.substring(0, 3);
-                        allSubjectAverages[code] = (allSubjectAverages[code] || 0) + subjectAverage;
-                        subjectCounts[code] = (subjectCounts[code] || 0) + 1;
-                    }
-                });
-                if (termSubjectAverages.length > 0) {
-                    termAverages[etape] = termSubjectAverages.reduce((a, b) => a + b, 0) / termSubjectAverages.length;
-                }
-            });
-
-            for (const code in allSubjectAverages) {
-                allSubjectAverages[code] /= subjectCounts[code];
-            }
-
-            let globalTotal = 0, globalWeight = 0;
-            for (const etape in termAverages) {
-                if (etape !== 'global' && termAverages[etape] !== null) {
-                    globalTotal += termAverages[etape] * TERM_WEIGHTS[etape];
-                    globalWeight += TERM_WEIGHTS[etape];
-                }
-            }
-            if (globalWeight > 0) termAverages.global = globalTotal / globalWeight;
-
-            return { term: termAverages, subjects: allSubjectAverages };
-        }
-
-        function getNumericGrade(result) {
-            if (!result) return null;
-            const gradeMap = { 'A+':100,'A':95,'A-':90,'B+':85,'B':80,'B-':75,'C+':70,'C':65,'C-':60,'D+':55,'D':50,'E':45 };
-            const trimmed = result.trim();
-            if(gradeMap[trimmed]) return gradeMap[trimmed];
-            const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/);
-            if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.'));
-            const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
-            if (scoreMatch) {
-                const score = parseFloat(scoreMatch[1].replace(',', '.'));
-                const max = parseFloat(scoreMatch[2].replace(',', '.'));
-                return (max > 0) ? (score / max) * 100 : null;
-            }
-            const plainNumber = parseFloat(trimmed);
-            if(!isNaN(plainNumber) && plainNumber >=0 && plainNumber <= 110) return plainNumber;
-            return null;
-        }
-
+        // Full helper functions for completeness
+        function logToConsole(message, isError = false) { debugConsole.style.display = 'block'; const timestamp = new Date().toLocaleTimeString(); const color = isError ? 'style="color: #e74c3c;"' : ''; debugConsole.innerHTML += `<div>[${timestamp}] <span ${color}>${message}</span></div>`; debugConsole.scrollTop = debugConsole.scrollHeight; (isError ? console.error : console.log)(message); }
+        function showError(message) { statusMessage.textContent = message; statusMessage.className = 'error'; logToConsole(message, true); }
+        function getPercentileColor(p) { if (p <= 10) return 'var(--success-color)'; if (p <= 25) return 'var(--primary-color)'; if (p <= 50) return '#f39c12'; return 'var(--danger-color)'; }
+        function calculateAveragesFromRawData(data) {let termAverages = {GlobalAverage:null, Etape1Average: null, Etape2Average: null, Etape3Average: null}; let allSubjectAverages = {}; let subjectCounts = {}; ['etape1', 'etape2', 'etape3'].forEach(etape => { if (!data[etape]) return; let termSubjectAverages = []; data[etape].forEach(subject => { let subjectTotal = 0, subjectWeight = 0; subject.competencies.forEach(comp => { const compWeightMatch = comp.name.match(/\((\d+)%\)/); if (!compWeightMatch) return; const compWeight = parseFloat(compWeightMatch[1]); let compTotal = 0, compAssignWeight = 0; comp.assignments.forEach(assign => { const grade = getNumericGrade(assign.result); const weight = parseFloat(assign.pond); if (grade !== null && !isNaN(weight) && weight > 0) { compTotal += grade * weight; compAssignWeight += weight; } }); if (compAssignWeight > 0) { subjectTotal += (compTotal / compAssignWeight) * (compWeight / 100); subjectWeight += (compWeight / 100); } }); if (subjectWeight > 0) { const subjectAverage = subjectTotal / subjectWeight; termSubjectAverages.push(subjectAverage); const code = subject.code.substring(0, 3); allSubjectAverages[code] = (allSubjectAverages[code] || 0) + subjectAverage; subjectCounts[code] = (subjectCounts[code] || 0) + 1; } }); if (termSubjectAverages.length > 0) { const etapeKey = 'Etape' + etape.slice(-1) + 'Average'; termAverages[etapeKey] = termSubjectAverages.reduce((a, b) => a + b, 0) / termSubjectAverages.length; } }); for (const code in allSubjectAverages) { allSubjectAverages[code] /= subjectCounts[code]; } let globalTotal = 0, globalWeight = 0; if(termAverages.Etape1Average !== null) {globalTotal += termAverages.Etape1Average * TERM_WEIGHTS.etape1; globalWeight += TERM_WEIGHTS.etape1}; if(termAverages.Etape2Average !== null) {globalTotal += termAverages.Etape2Average * TERM_WEIGHTS.etape2; globalWeight += TERM_WEIGHTS.etape2}; if(termAverages.Etape3Average !== null) {globalTotal += termAverages.Etape3Average * TERM_WEIGHTS.etape3; globalWeight += TERM_WEIGHTS.etape3}; if (globalWeight > 0) termAverages.GlobalAverage = globalTotal / globalWeight; return { term: termAverages, subjects: allSubjectAverages }; }
+        function getNumericGrade(result) { if (!result) return null; const gradeMap = {'A+':100,'A':95,'A-':90,'B+':85,'B':80,'B-':75,'C+':70,'C':65,'C-':60,'D+':55,'D':50,'E':45}; const trimmed = result.trim(); if(gradeMap[trimmed]) return gradeMap[trimmed]; const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/); if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.')); const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/); if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const max = parseFloat(scoreMatch[2].replace(',', '.')); return (max > 0) ? (score / max) * 100 : null; } const plainNumber = parseFloat(trimmed); if(!isNaN(plainNumber) && plainNumber >=0 && plainNumber <= 110) return plainNumber; return null; }
     </script>
 </body>
 </html>
