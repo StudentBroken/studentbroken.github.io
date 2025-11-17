@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analyse - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <!-- Font Awesome & Google Fonts -->
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -23,7 +24,7 @@
             --text-color: #34495e;
             --text-secondary-color: #7f8c8d;
             --accent-color: #3498db;
-            --light-grey: #e0e6eb;
+            --light-grey: #bdc3c7;
             --footer-grey: #7f8c8d;
             --success-color: #27ae60;
             --danger-color: #e74c3c;
@@ -31,6 +32,9 @@
             --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
             --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
             --border-color: #e0e6eb;
+            --goal-success-bg: #eafaf1;
+            --goal-warning-bg: #fff9f0;
+            --goal-danger-bg: #fdf3f2;
         }
 
         [data-theme="dark"] {
@@ -39,91 +43,135 @@
             --text-color: #e0e0e0;
             --text-secondary-color: #a0a0a0;
             --secondary-color: #bbbbbb;
-            --light-grey: #333333;
+            --light-grey: #757575;
             --footer-grey: #a0a0a0;
             --shadow-header: 0 2px 5px rgba(255, 255, 255, 0.1);
-            --shadow-widget: 0 5px 15px rgba(0, 0, 0, 0.3);
+            --shadow-widget: 0 5px 10px rgba(0, 0, 0, 0.3);
             --border-color: #333333;
-            .site-header, .widget-title { color: var(--text-color); }
+            --goal-success-bg: #1a3e2a;
+            --goal-warning-bg: #4d381c;
+            --goal-danger-bg: #4f2323;
         }
 
-        /* GLOBAL STYLES & TRANSITIONS */
-        *, *::before, *::after { box-sizing: border-box; }
-        body, .site-header-container, .sticky-tabs, .subject-widget, .tab-btn {
+        /* Corrected Dark Mode Styles */
+        [data-theme="dark"] .site-header,
+        [data-theme="dark"] .widget-title { color: var(--text-color); }
+        [data-theme="dark"] .comp-widget,
+        [data-theme="dark"] .calculator-container { background-color: #282828; border-color: var(--border-color); }
+        [data-theme="dark"] .modal-content { background-color: var(--background-color); }
+        [data-theme="dark"] .modal-header { background-color: #2c3e50; }
+        [data-theme="dark"] .goal-input input { background-color: #282828; border-color: var(--light-grey); color: var(--text-color); }
+        [data-theme="dark"] .order-editor-content { background-color: #282828; }
+        [data-theme="dark"] #order-list li { background-color: #333; }
+        [data-theme="dark"] .grade-pill { background-color: #444; }
+
+        /* GLOBAL TRANSITIONS */
+        body, .site-header-container, .sticky-tabs, .subject-widget, .modal-content, .tab-btn, .comp-widget, .calculator-container, input {
             transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
         }
-        body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--background-color); color: var(--text-color); }
         
-        /* HEADER */
-        .site-header-container { background-color: var(--widget-background); box-shadow: var(--shadow-header); border-bottom: 1px solid var(--border-color); padding: 15px 25px; display: flex; align-items: center; justify-content: space-between; position: relative; }
-        .site-header { position: absolute; left: 50%; transform: translateX(-50%); padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; }
-        .header-left, .header-right { display: flex; align-items: center; gap: 15px; z-index: 2; }
-        .icon-btn { background: none; border: 2px solid var(--light-grey); color: var(--text-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; text-decoration: none; transition: all 0.2s ease; }
-        .icon-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: scale(1.1); }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(41, 128, 185, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0); }
+        }
+        @keyframes arrow-move {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-3px); }
+        }
 
-        /* TABS */
+        /* General Styles */
+        body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--background-color); color: var(--text-color); }
+        .site-header-container { background-color: var(--widget-background); box-shadow: var(--shadow-header); border-bottom: 1px solid var(--border-color); padding: 15px 25px; display: flex; align-items: center; position: relative; margin-bottom: 0; }
+        .header-left { flex: 1; display: flex; justify-content: flex-start; }
+        .header-center { flex: 2; text-align: center; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; }
+        .site-header { padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; display: inline-block; }
+        .icon-btn { background: none; border: 2px solid var(--light-grey); color: var(--text-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; text-decoration: none; transition: all 0.2s ease, background-color var(--transition-duration), box-shadow 0.2s; }
+        .icon-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: scale(1.1); }
+        .header-left .icon-btn:hover { animation: pulse-border 1.5s infinite; }
+        .header-left .icon-btn:hover i { animation: arrow-move 0.5s ease-in-out infinite alternate; }
+
         .sticky-tabs { position: sticky; top: 0; background-color: var(--background-color); z-index: 100; padding: 15px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
         .tab-btn { padding: 10px 20px; border: 1px solid var(--light-grey); border-radius: 20px; background-color: transparent; color: var(--text-color); font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .tab-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-
-        /* MAIN WIDGET GRID */
         .widget-grid { max-width: 1400px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px; }
-        .subject-widget { background-color: var(--widget-background); border-radius: 12px; box-shadow: var(--shadow-widget); padding: 20px; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; cursor: pointer; }
+        .subject-widget { background-color: var(--widget-background); border-radius: 12px; box-shadow: var(--shadow-widget); padding: 20px; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
         .subject-widget:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
-        .general-average-widget { grid-column: 1 / -1; cursor: default; }
-        .general-average-widget:hover { transform: none; box-shadow: var(--shadow-widget); }
-
-        /* WIDGET CONTENT */
-        .widget-top-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
+        .widget-top-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; cursor: pointer; }
         .widget-info { flex: 1; }
         .widget-title { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); margin: 0 0 10px 0; }
         .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 0; }
         .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
         .widget-trend.up { color: var(--success-color); }
         .widget-trend.down { color: var(--danger-color); }
+        .widget-trend.neutral { color: var(--text-secondary-color); }
         .gauge-container { width: 120px; height: 70px; position: relative; }
-        .histogram-container { margin-top: 15px; height: 120px; }
-        .widget-chart-controls { display: flex; justify-content: flex-end; align-items: center; gap: 5px; margin-bottom: 5px; height: 25px; }
-        .chart-toggle-btn { background: none; border: 1px solid var(--border-color); color: var(--text-secondary-color); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8em; transition: all 0.2s ease; display: flex; align-items:center; }
-        .chart-toggle-btn:hover { color: var(--primary-color); border-color: var(--primary-color); }
+        .histogram-container { margin-top: 15px; height: 120px; cursor: pointer; }
         
-        /* --- EXPANDED DETAIL VIEW --- */
-        .expanded-view { display: none; max-width: 1600px; margin: 30px auto; padding: 0 20px; }
-        .expanded-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 25px; align-items: start; }
-        .expanded-widget { background-color: var(--widget-background); border-radius: 12px; box-shadow: var(--shadow-widget); padding: 25px; }
-        .expanded-charts .histogram-container { height: 180px; }
-        .expanded-charts .line-graph-container { height: 180px; margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px; }
-        #expanded-back-btn { margin-bottom: 20px; font-weight: 600; cursor: pointer; background: var(--widget-background); padding: 10px 18px; border-radius: 8px; border: 1px solid var(--border-color); }
+        /* Modal General Styles */
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content, .order-editor-content { transform: scale(0.9) translateY(-20px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-overlay.active .modal-content, .modal-overlay.active .order-editor-content { transform: scale(1) translateY(0); }
+        .btn { text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; transition: all 0.2s ease; }
+        .btn-secondary { background-color: #2980b9; color: white; border: none; }
+        .btn-secondary:hover { background-color: #3498db; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .btn-primary { padding: 10px 15px; border: none; background-color: var(--success-color); color: white; border-radius: 8px; cursor: pointer; }
+        
+        /* Details Modal */
+        .modal-content { background-color: var(--background-color); border-radius: 16px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 20px 25px; background-color: var(--secondary-color); color: white; border-radius: 16px 16px 0 0; }
+        .modal-title { font-family: 'Playfair Display', serif; font-size: 1.8em; margin: 0; }
+        .modal-body { padding: 25px; }
+        .competency-widgets { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        .comp-widget { flex: 1; min-width: 150px; background-color: var(--widget-background); border-radius: 8px; padding: 15px; text-align: center; border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; }
+        .comp-widget.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px var(--primary-color); }
+        .calculator-container { background-color: var(--widget-background); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); margin-top: 25px; }
+        .goal-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .goal-input input { width: 80px; padding: 8px; border-radius: 6px; border: 1px solid var(--light-grey); text-align: center; font-size: 1.1em; }
+        .goal-result { padding: 15px; border-radius: 6px; text-align: center; font-size: 1.1em; font-weight: 600; transition: background-color var(--transition-duration); }
+        .goal-result.success { background-color: var(--goal-success-bg); color: var(--success-color); }
+        .goal-result.warning { background-color: var(--goal-warning-bg); color: var(--warning-color); }
+        .goal-result.danger { background-color: var(--goal-danger-bg); color: var(--danger-color); }
+        .btn-save { padding: 8px 12px; border: none; background-color: var(--primary-color); color: white; border-radius: 6px; cursor: pointer; }
 
-        /* --- RANKING WIDGET & SKELETON LOADER --- */
-        .ranking-widget .widget-rank { font-size: 1.1em; font-weight: 600; color: var(--secondary-color); }
-        .mini-leaderboard-container { margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px; max-height: 300px; overflow-y: auto; }
-        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
-        .leaderboard-item { display: flex; align-items: center; padding: 6px 8px; border-radius: 6px; transition: background-color 0.2s; font-size: 0.9em; }
-        .leaderboard-item.is-user { background-color: #eaf2f8; font-weight: bold; }
-        [data-theme='dark'] .leaderboard-item.is-user { background-color: #2c3e50; }
-        .item-rank { width: 40px; font-weight: 600; }
-        .item-name { flex-grow: 1; }
-        .item-grade { margin-left: auto; font-weight: 600; }
-        @keyframes pulse-bg { 0% { background-color: #eee; } 50% { background-color: #e0e0e0; } 100% { background-color: #eee; } }
-        [data-theme='dark'] @keyframes pulse-bg { 0% { background-color: #2a2a2a; } 50% { background-color: #3a3a3a; } 100% { background-color: #2a2a2a; } }
-        .skeleton { animation: pulse-bg 1.5s infinite ease-in-out; background-color: #eee; color: transparent; border-radius: 4px; }
-        .skeleton.skeleton-title { width: 60%; height: 20px; margin-bottom: 15px; }
-        .skeleton.skeleton-rank { width: 80%; height: 24px; margin: 15px 0; }
-        .skeleton.skeleton-text { width: 100%; height: 16px; margin-top: 20px; }
-        .skeleton.skeleton-item { display: flex; height: 30px; margin-bottom: 8px; }
+        
+        /* Chart Controls */
+        .widget-chart-controls { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 5px; height: 25px; gap: 5px;; }
+        .chart-toggle-btn { background: none; border: 1px solid var(--border-color); color: var(--light-grey); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8em; transition: all 0.2s ease; }
+        .chart-toggle-btn:hover { color: var(--primary-color); border-color: var(--primary-color); }
 
+        /* Order Editor Modal */
+        #order-editor-modal { z-index: 1100; }
+        .order-editor-content { background-color: var(--widget-background); padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: var(--shadow-widget); }
+        .order-editor-content h3 { font-family: 'Playfair Display', serif; font-size: 1.6em; margin-top: 0; color: var(--primary-color); }
+        .editor-instructions { margin-bottom: 20px; color: var(--text-secondary-color); text-align: center; }
+        #order-list { list-style: none; padding: 0; margin: 0 0 20px 0; max-height: 40vh; overflow-y: auto; }
+        #order-list li { background-color: var(--background-color); margin-bottom: 8px; padding: 10px 15px; border-radius: 5px; display: flex; align-items: center; cursor: grab; transition: background-color 0.2s; border: 1px solid var(--border-color); }
+        #order-list li:active { cursor: grabbing; }
+        #order-list li.dragging { opacity: 0.5; background-color: var(--accent-color); }
+        #order-list li .fa-grip-vertical { margin-right: 15px; color: var(--text-secondary-color); }
+        .grade-pill { margin-left: auto; background-color: var(--widget-background); padding: 3px 8px; border-radius: 10px; font-size: 0.8em; font-weight: bold; border: 1px solid var(--border-color); }
+        .order-editor-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); }
+
+        /* Footer */
         footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: 40px; }
     </style>
 </head>
 <body>
     <header class="site-header-container">
         <div class="header-left">
-            <a href="main.html" class="icon-btn" title="Retour au tableau de bord"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="main.html" class="icon-btn" title="Retour au tableau de bord">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
         </div>
-        <h1 class="site-header">Outil MBS</h1>
+        <div class="header-center"><h1 class="site-header">Outil MBS</h1></div>
         <div class="header-right">
-            <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème"><i class="fa-solid fa-moon"></i></button>
+            <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            <a href="projection.html" class="btn btn-secondary">Projection des résultats</a>
         </div>
     </header>
 
@@ -134,373 +182,57 @@
         <button class="tab-btn" data-etape="etape3">Étape 3</button>
     </div>
 
-    <main id="main-content">
-        <div id="widget-grid" class="widget-grid">
-            <!-- Widgets will be populated by JavaScript -->
-        </div>
-        <div id="expanded-view" class="expanded-view">
-            <!-- Expanded view populated by JavaScript -->
-        </div>
+    <main id="widget-grid" class="widget-grid">
+        <!-- Widgets will be populated by JavaScript -->
     </main>
     
+    <div id="details-modal" class="modal-overlay">
+        <div id="modal-content" class="modal-content">
+            <!-- Modal content populated by JS -->
+        </div>
+    </div>
+    
+    <!-- ADDED: Structure for the Order Editor Modal -->
+    <div id="order-editor-modal" class="modal-overlay">
+        <div class="order-editor-content">
+            <h3>Modifier l'ordre</h3>
+            <p class="editor-instructions">Glissez et déposez les matières pour les réorganiser.</p>
+            <ul id="order-list">
+                <!-- Draggable items will be populated by JS -->
+            </ul>
+            <div class="order-editor-footer">
+                <button class="btn btn-secondary" id="cancel-order">Annuler</button>
+                <button class="btn btn-primary" id="save-order">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+
     <footer><p>Outil MBS - Moyenne, Bilan, Stratégie</p></footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- CONFIGURATION ---
-            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1CoMUIieKjENe1jE-5It-pIEi7qiU2Mv6ian-3yDNs6uz383wlQYmCdDNXXHAgLjpGw/exec';
-            const TERM_WEIGHTS = { etape1: 0.2, etape2: 0.2, etape3: 0.6 };
-            const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
+        // Inline script for instant theme loading
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const toggleIcon = themeToggle.querySelector('i');
+        const THEME_KEY = 'mbs-theme';
 
-            // --- STATE MANAGEMENT ---
-            let mbsData = {};
-            let rankingData = { loaded: false, data: null, error: null };
-            let activeGauges = {};
-            let activeWidgetCharts = {};
-            
-            // --- DOM ELEMENTS ---
-            const widgetGrid = document.getElementById('widget-grid');
-            const expandedViewContainer = document.getElementById('expanded-view');
-            const mainContent = document.getElementById('main-content');
-            
-            // --- INITIALIZATION ---
-            function init() {
-                loadLocalData();
-                loadRankingDataInBackground();
-                setupEventListeners();
-                renderWidgets('generale');
-            }
+        const updateTheme = (theme) => {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem(THEME_KEY, theme);
+            toggleIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        };
 
-            function loadLocalData() {
-                mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
-                mbsData.settings = mbsData.settings || {};
-                mbsData.historique = mbsData.historique || {};
-                if (!mbsData.valid) {
-                    widgetGrid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Aucune donnée à analyser. Veuillez d'abord importer vos données.</p>`;
-                }
-            }
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        const initialTheme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        updateTheme(initialTheme);
 
-            async function loadRankingDataInBackground() {
-                if (!mbsData.valid || !mbsData.nom || !mbsData.settings?.niveau) {
-                    rankingData.error = "Données locales (nom, niveau) manquantes.";
-                    return;
-                }
-                try {
-                    const localAverages = calculateAveragesFromRawData(mbsData);
-                    const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom)));
-                    const formData = new FormData();
-                    formData.append('encodedName', encodedName);
-                    formData.append('secondaryLevel', mbsData.settings.niveau);
-                    for (const key in localAverages.term) { if (localAverages.term[key] !== null) formData.append(key, localAverages.term[key].toFixed(2)); }
-                    for (const key in localAverages.subjects) { if (localAverages.subjects[key] !== null) formData.append(key, localAverages.subjects[key].toFixed(2)); }
-                    
-                    await fetch(SCRIPT_URL, { method: 'POST', body: formData });
-                    const getResponse = await fetch(SCRIPT_URL);
-                    if (!getResponse.ok) throw new Error(`GET request failed: ${getResponse.statusText}`);
-                    
-                    const allUsersData = await getResponse.json();
-                    if (allUsersData.result === 'error') throw new Error(`Failed to get data: ${allUsersData.error}`);
-                    
-                    rankingData.data = allUsersData;
-                    rankingData.loaded = true;
-
-                    // If expanded view is already open, refresh the ranking widget
-                    if (expandedViewContainer.style.display !== 'none') {
-                        const subjectCode = expandedViewContainer.dataset.subjectCode;
-                        if (subjectCode) {
-                            const subject = getOverallSubject(subjectCode);
-                            renderRankingWidget(subject);
-                        }
-                    }
-                } catch (error) {
-                    rankingData.error = `Erreur de communication: ${error.message}`;
-                }
-            }
-
-            function setupEventListeners() {
-                document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
-                    document.querySelector('.tab-btn.active').classList.remove('active');
-                    btn.classList.add('active');
-                    renderWidgets(btn.dataset.etape);
-                }));
-                 // Theme Toggle (Simplified from ranking page)
-                const themeToggle = document.getElementById('theme-toggle');
-                const html = document.documentElement;
-                const toggleIcon = themeToggle.querySelector('i');
-                const updateTheme = (theme) => {
-                    html.setAttribute('data-theme', theme);
-                    localStorage.setItem('mbs-theme', theme);
-                    toggleIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-                };
-                const storedTheme = localStorage.getItem('mbs-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                updateTheme(storedTheme);
-                themeToggle.addEventListener('click', () => updateTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
-            }
-
-            // --- CORE RENDERING ---
-            function renderWidgets(etapeKey) {
-                if (!mbsData.valid) return;
-                widgetGrid.innerHTML = '';
-                Object.values(activeGauges).forEach(chart => chart.destroy());
-                Object.values(activeWidgetCharts).forEach(chart => chart.destroy());
-
-                renderGeneralAverageWidget(etapeKey);
-
-                const allSubjects = Array.from(getAllSubjects().values());
-                allSubjects.forEach(subject => {
-                    const average = calculateSubjectAverage(subject);
-                    if (average === null) return;
-                    
-                    const history = mbsData.historique[subject.code] || [];
-                    let trend;
-                    if (history.length < 2) {
-                        trend = { direction: '—', change: '0.00%', class: 'neutral' };
-                    } else {
-                        const [prev, curr] = history.slice(-2);
-                        const change = curr - prev;
-                        trend = { direction: change < 0 ? '▼' : '▲', change: `${change < 0 ? '' : '+'}${change.toFixed(2)}%`, class: change < 0 ? 'down' : 'up' };
-                    }
-
-                    const widget = document.createElement('div');
-                    widget.className = 'subject-widget';
-                    widget.dataset.subjectCode = subject.code;
-                    const chartCanvasId = `dist-chart-${subject.code.replace(/\s+/g, '')}`;
-                    
-                    widget.innerHTML = `
-                        <div class="widget-top-section">
-                            <div class="widget-info">
-                                <h3 class="widget-title">${subject.name}</h3>
-                                <p class="widget-average">${average.toFixed(2)}%</p>
-                                <div class="widget-trend ${trend.class}"><span>${trend.direction}</span><span>${trend.change}</span></div>
-                            </div>
-                            <div class="gauge-container"><canvas id="gauge-${chartCanvasId}"></canvas></div>
-                        </div>
-                        <div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
-                    
-                    widget.addEventListener('click', () => showExpandedView(subject));
-                    widgetGrid.appendChild(widget);
-                    renderGauge(`gauge-${chartCanvasId}`, average);
-                    renderHistogram(chartCanvasId, subject, 'widget');
-                });
-            }
-
-            function renderGeneralAverageWidget(etapeKey) {
-                const averages = calculateAveragesFromRawData(mbsData);
-                let currentAvg = null;
-                const keyMap = { 'generale': 'GlobalAverage', 'etape1': 'Etape1Average', 'etape2': 'Etape2Average', 'etape3': 'Etape3Average' };
-                currentAvg = averages.term[keyMap[etapeKey]];
-                if (currentAvg === null) return;
-
-                const widget = document.createElement('div');
-                widget.className = 'subject-widget general-average-widget';
-                const chartCanvasId = `general-avg-chart`;
-                widget.innerHTML = `
-                    <div class="widget-top-section">
-                        <div class="widget-info">
-                            <h3 class="widget-title">Moyenne Générale (${document.querySelector('.tab-btn.active').textContent})</h3>
-                            <p class="widget-average">${currentAvg.toFixed(2)}%</p>
-                        </div>
-                        <div class="gauge-container"><canvas id="gauge-${chartCanvasId}"></canvas></div>
-                    </div>
-                    <div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
-                widgetGrid.appendChild(widget);
-                renderGauge(`gauge-${chartCanvasId}`, currentAvg);
-                
-                // For the general widget, histogram shows subject averages distribution, and line graph shows term history
-                const allSubjectAvgs = Object.values(averages.subjects).filter(avg => avg !== null);
-                const termHistory = [averages.term.Etape1Average, averages.term.Etape2Average, averages.term.Etape3Average].filter(avg => avg !== null);
-                renderCombinedGeneralChart(chartCanvasId, allSubjectAvgs, termHistory);
-            }
-
-            // --- EXPANDED VIEW LOGIC ---
-            function showExpandedView(subject) {
-                widgetGrid.style.display = 'none';
-                expandedViewContainer.style.display = 'block';
-                expandedViewContainer.dataset.subjectCode = subject.code;
-
-                const average = calculateSubjectAverage(subject);
-                const history = mbsData.historique[subject.code] || [];
-                let trend;
-                if (history.length < 2) {
-                    trend = { direction: '—', change: '0.00%', class: 'neutral' };
-                } else {
-                    const [prev, curr] = history.slice(-2);
-                    const change = curr - prev;
-                    trend = { direction: change < 0 ? '▼' : '▲', change: `${change < 0 ? '' : '+'}${change.toFixed(2)}%`, class: change < 0 ? 'down' : 'up' };
-                }
-
-                expandedViewContainer.innerHTML = `
-                    <button id="expanded-back-btn"><i class="fa-solid fa-arrow-left"></i> Retour à la vue d'ensemble</button>
-                    <div class="expanded-grid">
-                        <!-- Left: Info Widget -->
-                        <div class="expanded-widget expanded-info">
-                            <div class="widget-top-section">
-                                <div class="widget-info">
-                                    <h3 class="widget-title">${subject.name}</h3>
-                                    <p class="widget-average">${average.toFixed(2)}%</p>
-                                    <div class="widget-trend ${trend.class}"><span>${trend.direction}</span><span>${trend.change}</span></div>
-                                </div>
-                                <div class="gauge-container"><canvas id="expanded-gauge"></canvas></div>
-                            </div>
-                        </div>
-                        <!-- Center: Charts Widget -->
-                        <div class="expanded-widget expanded-charts">
-                             <div class="widget-chart-controls">
-                                <button class="chart-toggle-btn order-edit-btn"><i class="fa-solid fa-list-ol"></i> Ordonner les travaux</button>
-                            </div>
-                            <div class="histogram-container"><canvas id="expanded-histogram"></canvas></div>
-                            <div class="line-graph-container"><canvas id="expanded-line-graph"></canvas></div>
-                        </div>
-                        <!-- Right: Ranking Widget -->
-                        <div id="ranking-widget-container" class="expanded-widget ranking-widget">
-                            <!-- Ranking content will be rendered here -->
-                        </div>
-                    </div>`;
-                
-                document.getElementById('expanded-back-btn').addEventListener('click', hideExpandedView);
-                expandedViewContainer.querySelector('.order-edit-btn').addEventListener('click', () => {/* Placeholder for order editor */});
-                
-                renderGauge('expanded-gauge', average);
-                renderHistogram('expanded-histogram', subject, 'expanded');
-                renderLineGraph('expanded-line-graph', subject, 'expanded');
-                renderRankingWidget(subject);
-            }
-
-            function hideExpandedView() {
-                widgetGrid.style.display = 'grid';
-                expandedViewContainer.style.display = 'none';
-                expandedViewContainer.innerHTML = '';
-            }
-
-            function renderRankingWidget(subject) {
-                const container = document.getElementById('ranking-widget-container');
-                if (!container) return;
-
-                if (rankingData.error) {
-                    container.innerHTML = `<h3 class="widget-title">Classement</h3><p style="color:var(--danger-color);">${rankingData.error}</p>`;
-                    return;
-                }
-                if (!rankingData.loaded) {
-                    container.innerHTML = `
-                        <div class="skeleton skeleton-title"></div>
-                        <div class="skeleton skeleton-rank"></div>
-                        <div class="skeleton skeleton-text"></div>
-                        <div class="skeleton skeleton-item"></div>
-                        <div class="skeleton skeleton-item"></div>
-                        <div class="skeleton skeleton-item"></div>
-                        <div class="skeleton skeleton-item"></div>`;
-                    return;
-                }
-
-                const subjectCode = subject.code.substring(0, 3);
-                const levelData = rankingData.data.filter(d => d.secondaryLevel === mbsData.settings.niveau);
-                const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom)));
-                const currentUserData = levelData.find(d => d.encodedName === encodedName);
-                
-                if (!currentUserData || !currentUserData[subjectCode]) {
-                    container.innerHTML = `<h3 class="widget-title">Classement - ${subject.name}</h3><p>Données de classement non disponibles pour cette matière.</p>`;
-                    return;
-                }
-
-                const userValue = parseFloat(currentUserData[subjectCode]);
-                const ranks = getRank(levelData, subjectCode, encodedName);
-                const getTrophy = r => (r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : `#${r}`);
-
-                const leaderboardItemsHTML = levelData
-                    .filter(u => u[subjectCode] && !isNaN(parseFloat(u[subjectCode])))
-                    .sort((a, b) => b[subjectCode] - a[subjectCode])
-                    .map((user, index) => {
-                        const rank = index + 1;
-                        const isCurrentUser = user.encodedName === encodedName;
-                        const name = isCurrentUser ? 'Vous' : `Anonyme #${rank}`;
-                        return `<li class="leaderboard-item ${isCurrentUser ? 'is-user' : ''}">
-                            <span class="item-rank">${getTrophy(rank)}</span>
-                            <span class="item-name">${name}</span>
-                            <span class="item-grade">${parseFloat(user[subjectCode]).toFixed(1)}%</span>
-                        </li>`;
-                    }).join('');
-
-                container.innerHTML = `
-                    <h3 class="widget-title">Classement - ${subject.name}</h3>
-                    <div class="widget-rank">${ranks.rank} sur ${ranks.total} (Top ${ranks.percentile}%)</div>
-                    <div class="mini-leaderboard-container"><ul class="leaderboard-list">${leaderboardItemsHTML}</ul></div>`;
-            }
-
-            // --- CHART RENDERING ---
-            function renderGauge(canvasId, value) { /* ... (same as previous version) ... */ }
-            function renderHistogram(canvasId, subject, context) { /* ... (same as previous version, can be adapted for context if needed) ... */ }
-            function renderLineGraph(canvasId, subject, context) { /* ... (same as previous version, can be adapted for context if needed) ... */ }
-            
-            // --- RE-IMPLEMENTED CHART FUNCTIONS (UNCHANGED CORE LOGIC) ---
-            function renderGauge(canvasId, value) {
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                const gradient = ctx.createLinearGradient(0, 0, 120, 0);
-                gradient.addColorStop(0, '#e74c3c'); gradient.addColorStop(0.6, '#f39c12'); gradient.addColorStop(1, '#27ae60');
-                activeGauges[canvasId] = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%', plugins: { tooltip: { enabled: false } } }, plugins: [{ id: 'gaugeNeedle', afterDraw: chart => { const { ctx, chartArea } = chart; const angle = Math.PI + (value / 100) * Math.PI; const cx = chartArea.left + chartArea.width / 2; const cy = chartArea.top + chartArea.height; const needleRadius = chart.getDatasetMeta(0).data[0].outerRadius; ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(needleRadius - 10, 0); ctx.lineTo(0, 5); ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#e0e0e0' : '#2c3e50'; ctx.fill(); ctx.restore(); } }] });
-            }
-             function renderHistogram(canvasId, subject, context) {
-                const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-                const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
-                const grades = (subject.competencies || []).flatMap(comp => (comp.assignments || []).map(a => getNumericGrade(a.result)).filter(g => g !== null));
-                const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
-                grades.forEach(g => { if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++; else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++; });
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                activeWidgetCharts[canvasId] = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } } });
-            }
-            function renderLineGraph(canvasId, subject, context) {
-                const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
-                if(history.length === 0 && mbsData.historique[subject.code]) {
-                    const avg = calculateSubjectAverage(subject);
-                    if(avg) history.push(avg);
-                }
-                const chartData = { labels: history.map((_, i) => `Point ${i + 1}`), datasets: [{ label: 'Moyenne', data: history, borderColor: '#3498db', pointBackgroundColor: '#3498db', tension: 0.1, fill: false }] };
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                activeWidgetCharts[canvasId] = new Chart(ctx, { type: 'line', data: chartData, options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100 }, x: { ticks: { display: context === 'expanded' } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Historique des moyennes' } } } });
-            }
-
-            function renderCombinedGeneralChart(canvasId, subjectAvgs, termHistory) {
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-                const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
-                const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
-                subjectAvgs.forEach(g => { if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++; else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++; });
-
-                activeWidgetCharts[canvasId] = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Étape 1', 'Étape 2', 'Étape 3'],
-                        datasets: [
-                            { type: 'line', label: 'Moyenne par étape', data: termHistory, borderColor: isDarkMode ? '#e0e0e0' : '#2c3e50', borderWidth: 2, fill: false, pointRadius: 5, yAxisID: 'y' },
-                            { type: 'bar', label: 'Distribution des moyennes', data: Object.values(bins), backgroundColor: colors, yAxisID: 'y1', labels: Object.keys(bins) }
-                        ]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, title: { display: true, text: 'Performance Générale' } },
-                        scales: { y: { type: 'linear', position: 'left', min: 50, max: 100 }, y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } } }
-                    }
-                });
-            }
-
-            // --- DATA CALCULATION HELPERS ---
-            function getNumericGrade(result) { /* ... (same as ranking page) ... */ }
-            function calculateSubjectAverage(subject) { /* ... (same as previous version) ... */ }
-            function calculateAveragesFromRawData(data) { /* ... (same as ranking page) ... */ }
-            function getAllSubjects() { /* ... (from renderWidgets) ... */ }
-            function getOverallSubject(subjectCode) { return getAllSubjects().get(subjectCode); }
-            function getRank(levelData, key, currentUserEncodedName) { /* ... (from ranking page) ... */ }
-
-            // --- RE-IMPLEMENTED HELPER FUNCTIONS (UNCHANGED CORE LOGIC) ---
-            function getNumericGrade(result) { if (!result) return null; const trimmed = result.trim(); if (gradeMap[trimmed]) return gradeMap[trimmed]; const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/); if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const max = parseFloat(scoreMatch[2].replace(',', '.')); return max > 0 ? (score / max) * 100 : null; } return null; }
-            function calculateSubjectAverage(subject) { let totalWScore = 0, totalW = 0; if (subject && subject.competencies) { subject.competencies.forEach(comp => { const compWeightMatch = comp.name.match(/\((\d+)%\)/); if (!compWeightMatch) return; const compWeight = parseFloat(compWeightMatch[1]); const assignments = comp.assignments || []; const compResult = calculateAverage(assignments); if (compResult) { totalWScore += compResult.average * compWeight; totalW += compWeight; } }); } return totalW > 0 ? totalWScore / totalW : null; }
-            function calculateAverage(assignments) { let totalWGrade = 0, totalW = 0; (assignments || []).forEach(assign => { const grade = getNumericGrade(assign.result); const weight = parseFloat(assign.pond); if (grade !== null && !isNaN(weight) && weight > 0) { totalWGrade += grade * weight; totalW += weight; } }); return totalW > 0 ? { average: totalWGrade / totalW, weight: totalW } : null; }
-            function calculateAveragesFromRawData(data) { let termAverages = { GlobalAverage: null, Etape1Average: null, Etape2Average: null, Etape3Average: null }; let allSubjectAverages = {}; let subjectCounts = {}; ['etape1', 'etape2', 'etape3'].forEach(etape => { if (!data[etape]) return; let termSubjectAverages = []; data[etape].forEach(subject => { const subjectAverage = calculateSubjectAverage(subject); if (subjectAverage !== null) { termSubjectAverages.push(subjectAverage); const code = subject.code.substring(0, 3); allSubjectAverages[code] = (allSubjectAverages[code] || 0) + subjectAverage; subjectCounts[code] = (subjectCounts[code] || 0) + 1; } }); if (termSubjectAverages.length > 0) { const etapeKey = 'Etape' + etape.slice(-1) + 'Average'; termAverages[etapeKey] = termSubjectAverages.reduce((a, b) => a + b, 0) / termSubjectAverages.length; } }); for (const code in allSubjectAverages) { allSubjectAverages[code] /= subjectCounts[code]; } let globalTotal = 0, globalWeight = 0; if(termAverages.Etape1Average !== null) {globalTotal += termAverages.Etape1Average * TERM_WEIGHTS.etape1; globalWeight += TERM_WEIGHTS.etape1}; if(termAverages.Etape2Average !== null) {globalTotal += termAverages.Etape2Average * TERM_WEIGHTS.etape2; globalWeight += TERM_WEIGHTS.etape2}; if(termAverages.Etape3Average !== null) {globalTotal += termAverages.Etape3Average * TERM_WEIGHTS.etape3; globalWeight += TERM_WEIGHTS.etape3}; if (globalWeight > 0) termAverages.GlobalAverage = globalTotal / globalWeight; return { term: termAverages, subjects: allSubjectAverages }; }
-            function getAllSubjects() { const allSubjects = new Map(); ['etape1', 'etape2', 'etape3'].forEach(etape => { (mbsData[etape] || []).forEach(subject => { if (!allSubjects.has(subject.code)) { allSubjects.set(subject.code, { ...subject, competencies: [] }); } }); }); ['etape1', 'etape2', 'etape3'].forEach(etape => { (mbsData[etape] || []).forEach(subject => { allSubjects.get(subject.code)?.competencies.push(...subject.competencies); }); }); return allSubjects; }
-            function getRank(levelData, key, currentUserEncodedName) { const scores = levelData.map(row => parseFloat(row[key])).filter(score => !isNaN(score)); scores.sort((a, b) => b - a); const currentUser = levelData.find(d => d.encodedName === currentUserEncodedName); const currentUserValue = currentUser ? parseFloat(currentUser[key]) : NaN; const rank = scores.indexOf(currentUserValue) + 1; const percentile = (scores.length > 0) ? (rank / scores.length) * 100 : 0; return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? (100 - percentile).toFixed(1) : null }; }
-            
-            // --- RUN ---
-            init();
+        themeToggle.addEventListener('click', () => {
+            const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            updateTheme(newTheme);
         });
     </script>
+
+    <script src="js/improve-functions.js"></script>
 </body>
 </html>
