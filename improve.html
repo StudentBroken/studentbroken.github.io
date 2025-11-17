@@ -119,230 +119,288 @@
             <!-- Expanded view widgets populated by JS -->
         </div>
     </div>
+
+<!--#################################################################################
 //#################################################################################
 //#################################################################################
-//#################################################################################
-
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown Formatting Showcase</title>
-    <style>
-        /* Basic Reset */
-        :root {
-            --mbs-bg-color: #1a1a1a;
-            --mbs-surface-color: #2c2c2c;
-            --mbs-primary-color: #61afef;
-            --mbs-text-color: #f0f0f0;
-            --mbs-text-secondary-color: #a0a0a0;
-            --mbs-border-color: #444444;
-            --mbs-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--mbs-bg-color);
-            color: var(--mbs-text-color);
-            font-family: var(--mbs-font-family);
-            line-height: 1.6;
-            padding: 20px;
-        }
-
-        .mbs-chat-message {
-            background-color: var(--mbs-surface-color);
-            border: 1px solid var(--mbs-border-color);
-            border-radius: 4px;
-            padding: 19px 27px;
-            margin-bottom: 20px;
-        }
-
-        .mbs-chat-message h1,
-        .mbs-chat-message h2,
-        .mbs-chat-message h3,
-        .mbs-chat-message h4,
-        .mbs-chat-message h5,
-        .mbs-chat-message h6 {
-            color: var(--mbs-primary-color);
-            margin-top: 1em;
-            margin-bottom: 0.5em;
-        }
-
-        .mbs-chat-message p {
-            margin-bottom: 0.8em;
-        }
-
-        .mbs-chat-message ul,
-        .mbs-chat-message ol {
-            padding-left: 25px;
-            margin-bottom: 0.8em;
-        }
-
-        .mbs-chat-message li {
-            margin-bottom: 4px;
-        }
-
-        .mbs-chat-message strong,
-        .mbs-chat-message b {
-            color: #e5c0ff;
-            font-weight: 600;
-        }
-
-        .mbs-chat-message em,
-        .mbs-chat-message i {
-            font-style: italic;
-        }
-
-        .mbs-chat-message pre {
-            background-color: var(--mbs-bg-color);
-            border: 1px solid var(--mbs-border-color);
-            border-radius: 4px;
-            padding: 16px;
-            overflow-x: auto;
-        }
-
-        .mbs-chat-message code {
-            font-family: "Courier New", Courier, monospace;
-            background-color: var(--mbs-bg-color);
-            padding: 2px 4px;
-            border-radius: 3px;
-        }
-        
-        .mbs-chat-message pre code {
-            padding: 0;
-            background-color: transparent;
-        }
-
-        .mbs-chat-message table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 1em;
-        }
-
-        .mbs-chat-message th,
-        .mbs-chat-message td {
-            border: 1px solid var(--mbs-border-color);
-            padding: 8px;
-            text-align: left;
-        }
-
-        .mbs-chat-message th {
-            background-color: #333;
-        }
-
-        .mbs-chat-message blockquote {
-            border-left: 4px solid var(--mbs-primary-color);
-            padding-left: 16px;
-            color: var(--mbs-text-secondary-color);
-            margin: 1em 0;
-        }
-
-        .mbs-chat-message hr {
-            border: 0;
-            border-top: 1px solid var(--mbs-border-color);
-            margin: 1.5em 0;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="mbs-chat-message ai">
-        <h1>Heading 1</h1>
-        <h2>Heading 2</h2>
-        <h3>Heading 3</h3>
-        <h4>Heading 4</h4>
-        <h5>Heading 5</h5>
-        <h6>Heading 6</h6>
-
-        <hr>
-
-        <p>This is a paragraph with <strong>bold text</strong>, <em>italic text</em>, and <del>strikethrough text</del>.</p>
-
-        <p>You can also have inline `code` within a paragraph.</p>
-
-        <blockquote>
-            This is a blockquote. It's useful for highlighting a section of text.
-        </blockquote>
-        
-        <hr>
-
-        <h3>Lists</h3>
-        
-        <h4>Unordered List</h4>
-        <ul>
-            <li>Item 1</li>
-            <li>Item 2
-                <ul>
-                    <li>Nested Item 2.1</li>
-                    <li>Nested Item 2.2</li>
-                </ul>
-            </li>
-            <li>Item 3</li>
-        </ul>
-
-        <h4>Ordered List</h4>
-        <ol>
-            <li>First item</li>
-            <li>Second item</li>
-            <li>Third item</li>
-        </ol>
-
-        <hr>
-
-        <h3>Code Blocks</h3>
-        <pre><code class="language-javascript">
-    function greet(name) {
-        console.log("Hello, " + name + "!");
+-->
+<style>
+    /* Basic Reset */
+    :root {
+        --mbs-bg-color: #1a1a1a;
+        --mbs-surface-color: #2c2c2c;
+        --mbs-primary-color: #61afef;
+        --mbs-text-color: #f0f0f0;
+        --mbs-text-secondary-color: #a0a0a0;
+        --mbs-border-color: #444444;
+        --mbs-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
-    greet("World");
-        </code></pre>
-        
-        <pre><code>
-    This is a generic code block.
-    It preserves spaces and line breaks.
-        </code></pre>
+    #mbs-chatbot-container *,
+    #mbs-chatbot-container *::before,
+    #mbs-chatbot-container *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
 
-        <hr>
-        
-        <h3>Tables</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Syntax</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Header</td>
-                    <td>Title</td>
-                </tr>
-                <tr>
-                    <td>Paragraph</td>
-                    <td>Text</td>
-                </tr>
-            </tbody>
-        </table>
+    /* Toggle Button Container */
+    #mbs-chatbot-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 10000;
+        font-family: var(--mbs-font-family);
+    }
 
-        <hr>
+/* Toggle Button */
+#mbs-chatbot-toggle {
+    position: relative; 
+    z-index: 10000; 
+    background-color: var(--mbs-primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.2s ease;
+}
+#mbs-chatbot-container.expanded #mbs-chatbot-toggle {
+    transform: translateX(calc(-1 * clamp(400px, 50vw, 800px)));
+}
+    #mbs-chatbot-toggle.loading {
+        background-color: #444;
+        cursor: wait;
+        animation: mbs-pulse 1.5s infinite;
+    }
+    #mbs-chatbot-toggle:not(.loading):hover {
+        background-color: #9b78e3;
+        transform: scale(1.1);
+    }
+    
+    #mbs-chatbot-toggle .chat-icon,
+    #mbs-chatbot-toggle .close-icon,
+    #mbs-chatbot-toggle .loading-icon { display: none; }
+    
+    #mbs-chatbot-toggle:not(.loading) .chat-icon { display: block; }
+    #mbs-chatbot-container.expanded #mbs-chatbot-toggle .chat-icon { display: none; }
+    #mbs-chatbot-container.expanded #mbs-chatbot-toggle .close-icon { display: block; }
+    #mbs-chatbot-toggle.loading .loading-icon { display: block; animation: mbs-spin 1.5s linear infinite; }
 
-        <h3>Links and Images</h3>
-        <p><a href="https://www.google.com">This is a link to Google.</a></p>
-        <p><img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google Logo"></p>
-        
-        <hr>
+    @keyframes mbs-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes mbs-pulse { 0% { box-shadow: 0 0 0 0 rgba(138, 99, 210, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(138, 99, 210, 0); } 100% { box-shadow: 0 0 0 0 rgba(138, 99, 210, 0); } }
 
-        <h3>Empty Lines and Spaces</h3>
-        <p>This is the first line.</p>
-        <br>
-        <p>This is the second line, after a single line break.</p>
 
-        <p>This paragraph is separated by a larger space (empty line in Markdown).</p>
-        
-        <p>This line has    extra    spaces between words.</p>
+    /* Sidebar Window */
+    #mbs-chatbot-window {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        /* --- 50% WIDTH --- */
+        width: clamp(400px, 50vw, 800px);
+        height: 100%;
+        background-color: var(--mbs-bg-color);
+        border-left: 1px solid var(--mbs-border-color);
+        box-shadow: -5px 0 20px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        pointer-events: none;
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        z-index: 9999;
+    }
 
+    #mbs-chatbot-container.expanded #mbs-chatbot-window {
+        transform: translateX(0);
+        pointer-events: auto;
+    }
+
+    /* Header */
+    .mbs-chat-header {
+        padding: 16px;
+        background-color: var(--mbs-surface-color);
+        border-bottom: 1px solid var(--mbs-border-color);
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .mbs-chat-header h3 {
+        color: var(--mbs-text-color);
+        font-size: 1.25rem;
+        margin: 0;
+    }
+
+    /* Messages Area */
+    #mbs-chat-messages {
+        flex-grow: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px; /* Gap between messages */
+    }
+    
+    #mbs-chat-messages a { color: #61afef; }
+    #mbs-chat-messages::-webkit-scrollbar { width: 6px; }
+    #mbs-chat-messages::-webkit-scrollbar-track { background: transparent; }
+    #mbs-chat-messages::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+
+    /* --- OUTLINE RECTANGLE & MARKDOWN FIX --- */
+    .mbs-chat-message {
+        max-width: 90%; 
+        padding: 19px 27px; /* UPDATED PADDING */
+        border-radius: 4px; /* Slightly rounded corners for the rectangle */
+        line-height: 1.6;
+        font-size: 1.05rem;
+        overflow-wrap: break-word;
+        border: 1px solid var(--mbs-border-color); /* Outline border */
+        background-color: transparent; /* Transparent background */
+    }
+    
+    .mbs-chat-message.ai * {
+        margin: 0;
+        color: inherit;
+    }
+    .mbs-chat-message.ai > *:not(:last-child) {
+        margin-bottom: 0.8em;
+    }
+
+    .mbs-chat-message.user {
+        color: white;
+        align-self: flex-end;
+        /* Border color can be primary for user, or keep it neutral */
+        border-color: var(--mbs-primary-color); /* User messages highlighted with primary color border */
+    }
+
+    .mbs-chat-message.ai {
+        color: var(--mbs-text-color);
+        align-self: flex-start;
+        /* AI messages with standard border color */
+        border-color: var(--mbs-border-color);
+    }
+    
+    .mbs-chat-message.ai ul, .mbs-chat-message.ai ol {
+        padding-left: 25px;
+    }
+    .mbs-chat-message.ai li {
+        margin-bottom: 4px;
+    }
+    .mbs-chat-message.ai strong, .mbs-chat-message.ai b {
+        color: #e5c0ff;
+        font-weight: 600;
+    }
+    
+    /* Typing Indicator */
+    .mbs-typing-indicator {
+        align-self: flex-start;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 14px 20px;
+        background-color: var(--mbs-surface-color);
+        border-radius: 12px;
+        border-bottom-left-radius: 4px;
+    }
+    .mbs-typing-indicator span {
+        width: 8px;
+        height: 8px;
+        background-color: var(--mbs-text-secondary-color);
+        border-radius: 50%;
+        animation: mbs-typing-bounce 1.4s infinite ease-in-out both;
+    }
+    .mbs-typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .mbs-typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes mbs-typing-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+
+
+    /* Input Form */
+    #mbs-chat-form {
+        display: flex;
+        padding: 16px;
+        border-top: 1px solid var(--mbs-border-color);
+        background-color: var(--mbs-surface-color);
+        flex-shrink: 0;
+    }
+    #mbs-chat-form:has(input:disabled) #mbs-chat-input { background-color: #383838; cursor: not-allowed; }
+    #mbs-chat-form:has(input:disabled) #mbs-chat-send { background-color: #555; cursor: not-allowed; }
+
+    #mbs-chat-input {
+        flex-grow: 1;
+        background-color: var(--mbs-bg-color);
+        border: 1px solid var(--mbs-border-color);
+        border-radius: 20px;
+        padding: 12px 18px;
+        color: var(--mbs-text-color);
+        font-size: 1rem;
+        margin-right: 10px;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+    #mbs-chat-input:focus { border-color: var(--mbs-primary-color); }
+    #mbs-chat-input::placeholder { color: var(--mbs-text-secondary-color); }
+
+    #mbs-chat-send {
+        background-color: var(--mbs-primary-color);
+        border: none;
+        color: white;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+        transition: background-color 0.2s ease;
+    }
+    #mbs-chat-send:not([disabled]):hover { background-color: #9b78e3; }
+
+    /* Responsive */
+    @media (max-width: 500px) {
+        #mbs-chatbot-window { width: 100vw; }
+        #mbs-chatbot-container { bottom: 10px; right: 10px; }
+    }
+</style>
+
+<div id="mbs-chatbot-container">
+    <!-- Chat Window (Sidebar) -->
+    <div id="mbs-chatbot-window">
+        <div class="mbs-chat-header">
+            <h3>Assistant MBS</h3>
+        </div>
+        <div id="mbs-chat-messages">
+            <!-- Messages will be dynamically inserted here -->
+        </div>
+        <form id="mbs-chat-form">
+            <input type="text" id="mbs-chat-input" placeholder="Chargement de l'assistant..." autocomplete="off" disabled>
+            <button type="submit" id="mbs-chat-send" aria-label="Envoyer" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: -2px;"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            </button>
+        </form>
     </div>
 
+    <!-- Toggle Button (Handle) -->
+    <button id="mbs-chatbot-toggle" aria-label="Ouvrir/Fermer le chatbot" class="loading">
+        <span class="chat-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </span>
+        <span class="close-icon">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </span>
+        <span class="loading-icon">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+        </span>
+    </button>
+</div>
 
 <!-- MARKED.JS for Markdown rendering -->
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
@@ -567,9 +625,10 @@
 </script>
 
     
+<!--#################################################################################
 //#################################################################################
 //#################################################################################
-//#################################################################################
+-->
 
     
     <footer><p>Outil MBS - Moyenne, Bilan, Stratégie</p></footer>
