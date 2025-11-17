@@ -3,92 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carte de Stats - Outil MBS</title>
+    <title>Classement - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- New library for downloading the card as an image -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
+    <!-- CSS is a refined version of your original, preferred layout -->
     <style>
-        :root {--primary-color:#3498db; --secondary-color:#2c3e50; --background-color:#ecf0f1; --widget-background:#ffffff; --text-color:#34495e; --light-grey:#bdc3c7; --border-color:#e0e6eb; --shadow:0 10px 30px rgba(0,0,0,0.1); --transition-duration:0.2s;}
-        [data-theme='dark'] { --background-color:#1a1a1a; --widget-background:#2c3e50; --text-color:#ecf0f1; --secondary-color:#bdc3c7; --light-grey:#555; --border-color:#3a3a3a; --shadow:0 10px 30px rgba(0,0,0,0.3); }
-        body, button { transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease; }
-        body { margin:0; font-family:'Inter',sans-serif; background-color:var(--background-color); color:var(--text-color); }
-        .site-header-container { background-color:var(--widget-background); box-shadow:0 2px 5px rgba(0,0,0,0.05); padding:15px 25px; display:flex; align-items:center; justify-content:space-between; position:relative; margin-bottom:40px; }
-        .header-center { position:absolute; left:50%; transform:translateX(-50%); }
-        .site-header { text-align:center; padding:0; margin:0; color:var(--secondary-color); font-size:2.2em; font-family:'Playfair Display',serif; }
-        .icon-btn { background:none; border:2px solid var(--light-grey); color:var(--text-color); width:40px; height:40px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1em; text-decoration:none; transition:all .2s ease; }
-        .icon-btn:hover { border-color:var(--primary-color); color:var(--primary-color); transform:scale(1.1); }
-        .main-container { max-width:900px; margin:auto; padding:0 20px; text-align:center; }
-        .error-message { text-align:center; padding:40px; font-size:1.2em; color:#e74c3c; background-color:#fdd; border:1px solid #e74c3c; border-radius:8px; }
-        #debug-console { margin-top:30px; background:#2c3e50; color:#ecf0f1; border-radius:10px; padding:15px; font-family:monospace; height:150px; overflow-y:auto; font-size:0.9em; display:none; text-align:left; }
+        :root {--primary-color:#2980b9; --secondary-color:#2c3e50; --background-color:#f7f9fb; --widget-background:#ffffff; --text-color:#34495e; --light-grey:#e0e6eb; --danger-color:#e74c3c; --success-color:#27ae60; --shadow-widget:0 10px 20px rgba(0,0,0,0.07); --transition-duration:0.15s;}
+        [data-theme='dark'] { --background-color:#121212; --widget-background:#1e1e1e; --text-color:#e0e0e0; --secondary-color:#bbbbbb; --light-grey:#333; --danger-color:#ff6b6b; --shadow-widget:0 8px 20px rgba(0,0,0,0.4); }
 
-        /* --- STATS CARD STYLES (POKEMON CARD) --- */
-        #stats-card-container { margin-bottom:40px; }
-        .stats-card {
-            width:350px; height:500px; margin:0 auto; border-radius:20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            padding:20px; box-sizing:border-box;
-            display:flex; flex-direction:column;
-            position:relative; overflow:hidden;
-            border:8px solid #f1c40f;
-            background-size: cover;
-            background-position: center;
-            transition: background-image 0.5s ease-in-out;
-        }
-        /* TIER BACKGROUNDS */
-        .tier-bronze { background-image: linear-gradient(45deg, #a77044, #d4a373); border-color: #a77044; }
-        .tier-silver { background-image: linear-gradient(45deg, #a1a1a1, #d8d8d8); border-color: #a1a1a1; }
-        .tier-gold { background-image: linear-gradient(45deg, #f1c40f, #f9e79f); border-color: #f1c40f; }
-        .tier-platinum { background-image: linear-gradient(45deg, #7f8c8d, #bdc3c7); border-color: #7f8c8d; }
-        .tier-diamond { background-image: linear-gradient(45deg, #2980b9, #3498db); border-color: #2980b9; }
-
-        .card-header { text-align:center; border-bottom:2px solid rgba(255,255,255,0.3); padding-bottom:10px; margin-bottom:15px; }
-        .card-title { font-family:'Playfair Display', serif; font-size:2em; margin:0; color:white; text-shadow:1px 1px 3px rgba(0,0,0,0.4); }
-        .card-subtitle { font-size:1em; font-weight:500; color:rgba(255,255,255,0.8); margin:0; }
-        
-        .card-body { flex-grow:1; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-        .card-main-stat { font-size:6em; font-weight:700; color:white; text-shadow:2px 2px 5px rgba(0,0,0,0.5); }
-        .card-main-stat small { font-size:0.4em; }
-        .card-rank { font-size:1.5em; font-weight:600; color:rgba(255,255,255,0.9); margin-top:-10px; }
-
-        .card-footer { border-top:2px solid rgba(255,255,255,0.3); padding-top:15px; margin-top:15px; text-align:center; }
-        .card-rank-title { font-size:1.2em; font-weight:bold; color:white; text-shadow:1px 1px 3px rgba(0,0,0,0.4); }
-        .download-btn {
-            background-color:rgba(44,62,80,0.8); color:white; border:none; border-radius:8px; padding:12px 20px;
-            font-size:1em; font-weight:bold; cursor:pointer; transition: background-color 0.3s; margin-top:30px;
-        }
-        .download-btn:hover { background-color:rgba(44,62,80,1); }
-        
-        /* GRAPH (WAY BIGGER) */
-        .graph-widget { margin-top:40px; background:var(--widget-background); padding:30px; border-radius:16px; box-shadow:var(--shadow); }
-        #performanceChart { max-height: 450px; }
+        body, .site-header-container, .stat-widget, .icon-btn { transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease; }
+        body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); }
+        .site-header-container { background-color: var(--widget-background); box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 15px 25px; position: relative; display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+        .header-left, .header-right { display: flex; align-items: center; gap: 15px; }
+        .site-header { text-align: center; padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; position: absolute; left: 50%; transform: translateX(-50%); }
+        .icon-btn { background: none; border: 2px solid var(--light-grey); color: var(--text-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; text-decoration: none; transition: all .2s ease; }
+        .icon-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: scale(1.1); }
+        .main-container { max-width: 1200px; margin: auto; padding: 0 20px; width: 100%; box-sizing: border-box; }
+        .controls { background: var(--widget-background); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-widget); margin-bottom: 25px; border: 1px solid var(--light-grey); }
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; background-color: white; font-size: 1em; }
+        [data-theme='dark'] select { background-color: #2c3e50; color: var(--text-color); border-color: #444; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+        .stat-widget { background: var(--widget-background); border-radius: 16px; padding: 25px; box-shadow: var(--shadow-widget); border: 1px solid var(--light-grey); display: flex; flex-direction: column; }
+        .main-avg-widget { grid-column: 1 / -1; } /* The main widget is now full width */
+        .graph-widget, .subject-table-widget { grid-column: 1 / -1; margin-top: 25px; }
+        .widget-header { text-align: center; margin-bottom: 15px; }
+        .widget-title { font-size: 1.2em; font-weight: bold; color: var(--secondary-color); margin: 0 0 10px 0; }
+        .widget-value { font-size: 4em; font-weight: 700; color: var(--primary-color);}
+        .widget-rank { font-size: 1.3em; font-weight: 600; color: var(--secondary-color); }
+        .mini-leaderboard-container { flex-grow: 1; overflow-y: auto; position: relative; margin-top: 20px; border-top: 1px solid var(--light-grey); padding-top: 15px; max-height: 250px; }
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
+        .leaderboard-item { display: flex; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 1em; transition: background-color 0.2s; }
+        .leaderboard-item.is-user { background-color: #eaf2f8; font-weight: bold; }
+        [data-theme='dark'] .leaderboard-item.is-user { background-color: #2c3e50; }
+        .item-rank { width: 45px; font-weight: 600; }
+        .item-name { font-weight: normal; }
+        .item-grade { margin-left: auto; font-weight: 600; }
+        .error-message { text-align: center; padding: 40px; font-size: 1.2em; color: var(--danger-color); background-color: #fdd; border: 1px solid var(--danger-color); border-radius: 8px; }
+        #debug-console { margin-top:30px; background: #2c3e50; color:#ecf0f1; border-radius:10px; padding:15px; font-family:monospace; height:150px; overflow-y:auto; font-size:0.9em; display:none; }
+        .subject-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .subject-table th, .subject-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--light-grey); }
     </style>
 </head>
 <body>
     <header class="site-header-container">
         <div class="header-left">
-            <a href="main.html" class="icon-btn" title="Retour"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="main.html" class="icon-btn" title="Retour">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
         </div>
-        <div class="header-center"><h1 class="site-header">Votre Carte de Stats</h1></div>
-        <div class="header-right"><button class="icon-btn" id="theme-toggle" title="Mode Sombre/Clair"><i class="fa-solid fa-moon"></i></button></div>
+        <h1 class="site-header">Classements</h1>
+        <div class="header-right">
+            <button class="icon-btn" id="theme-toggle" title="Mode Sombre/Clair">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
     </header>
-
     <main class="main-container">
+        <div class="controls">
+            <label for="category-select">Comparer les classements pour :</label>
+            <select id="category-select"></select>
+        </div>
         <div id="dashboard-container">
-            <div class="error-message" id="status-message" style="display: block;">Synchronisation avec le serveur de classement...</div>
+            <div class="error-message" id="status-message" style="display: block;">Synchronisation...</div>
         </div>
         <div id="debug-console"></div>
     </main>
 
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1CoMUIieKjENe1jE-5It-pIEi7qiU2Mv6ian-3yDNs6uz383wlQYmCdDNXXHAgLjpGw/exec';
+        const subjectNames = { 'ART':"Arts", 'MUS':"Musique", 'DRM':"Art Dram.", 'CAT':"Tech", 'FRA':"Français", 'ELA':"Anglais", 'EESL':"Anglais Enrichi", 'ESL':"Anglais Second", 'SN':"Math SN", 'CST':"Math CST", 'ST':"Science", 'STE':"Science (STE)", 'HQC':"Histoire", 'CCQ':"Citoyenneté", 'EPS':"É. Phys.", 'CHI':"Chimie", 'PHY':"Physique", 'MON':"Monde Cont.", 'MED':"Média", 'ENT':"Entreprenariat", 'INF':"Informatique", 'PSY':"Psychologie", 'FIN':"Finance" };
+        const overallNames = { 'GlobalAverage':"Moyenne Globale", 'Etape1Average':"Étape 1", 'Etape2Average':"Étape 2", 'Etape3Average':"Étape 3" };
         const TERM_WEIGHTS = { etape1:0.20, etape2:0.20, etape3:0.60 };
 
         const dashboardContainer = document.getElementById('dashboard-container');
         const debugConsole = document.getElementById('debug-console');
+        const categorySelect = document.getElementById('category-select');
         const statusMessage = document.getElementById('status-message');
         const themeToggleBtn = document.getElementById('theme-toggle');
         const html = document.documentElement;
@@ -103,16 +94,21 @@
         themeToggleBtn.addEventListener('click', () => { const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; updateTheme(newTheme); });
         
         // --- CORE LOGIC ---
-        function logToConsole(message, isError = false) { /* Commented out for now */ }
+        function logToConsole(message, isError = false) {
+            // debugConsole.style.display = 'block'; // This line is now commented out
+            const timestamp = new Date().toLocaleTimeString();
+            const color = isError ? 'color: #e74c3c;' : '';
+            console.log(`[${timestamp}] %c${message}`, color);
+        }
         document.addEventListener('DOMContentLoaded', initialize);
 
         async function initialize() {
-            logToConsole("Initializing...");
+            logToConsole("Initializing leaderboard...");
             if (SCRIPT_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE')) { showError("SCRIPT_URL is not configured."); return; }
 
-            logToConsole("Loading local data...");
+            logToConsole("Loading data from Local Storage...");
             const mbsData = JSON.parse(localStorage.getItem('mbsData'));
-            if (!mbsData?.valid || !mbsData?.nom || !mbsData?.settings?.niveau) { showError("mbsData, nom, or niveau not found."); return; }
+            if (!mbsData?.valid || !mbsData?.nom || !mbsData?.settings?.niveau) { showError("mbsData, nom, or niveau not found in Local Storage."); return; }
             
             logToConsole("Calculating local averages...");
             const averages = calculateAveragesFromRawData(mbsData);
@@ -125,7 +121,7 @@
             for (const key in averages.term) { if (averages.term[key] !== null) formData.append(key, averages.term[key].toFixed(2)); }
             for (const key in averages.subjects) { if (averages.subjects[key] !== null) formData.append(key, averages.subjects[key].toFixed(2)); }
 
-            logToConsole(`Sending data for user: ${mbsData.nom}`);
+            logToConsole(`UserID successfully hashed. Sending data to sheets`);
             try {
                 const postResponse = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
                 if (!postResponse.ok) throw new Error(`POST request failed: ${postResponse.statusText}`);
@@ -133,7 +129,7 @@
                 if (postResult.result !== 'success') throw new Error(`Failed to save data: ${postResult.error}`);
                 logToConsole("Data sent successfully.");
 
-                logToConsole("Fetching leaderboard data...");
+                logToConsole("Fetching full leaderboard data...");
                 const getResponse = await fetch(SCRIPT_URL);
                 if (!getResponse.ok) throw new Error(`GET request failed: ${getResponse.statusText}`);
                 const allUsersData = await getResponse.json();
@@ -141,83 +137,35 @@
                 logToConsole(`Received data for ${allUsersData.length} users.`);
 
                 statusMessage.style.display = 'none';
-                renderDashboard(allUsersData, encodedName, mbsData.settings.niveau, mbsData.nom);
+                
+                populateDropdown(averages.term, averages.subjects);
+                const renderAndAttachListener = () => renderDashboard(allUsersData, encodedName, mbsData.settings.niveau);
+                categorySelect.addEventListener('change', renderAndAttachListener);
+                renderAndAttachListener();
 
             } catch (error) {
                 showError(`Communication error: ${error.message}`);
             }
         }
         
-        function renderDashboard(allUsersData, currentUserEncodedName, userLevel, plainName) {
-            const levelData = allUsersData.filter(d => d.secondaryLevel === userLevel);
-            const currentUserData = levelData.find(d => d.encodedName === currentUserEncodedName);
-            if (!currentUserData) { showError(`Vos données n'ont pas été trouvées pour ${userLevel}.`); return; }
-
-            const cardHTML = createStatsCardHTML(levelData, currentUserData, plainName);
-            const graphHTML = `<div class="graph-widget"><canvas id="performanceChart"></canvas></div>`;
-            
-            dashboardContainer.innerHTML = cardHTML + graphHTML;
-            
-            createPerformanceChart(levelData, currentUserData);
-
-            // Add event listener for the download button
-            document.getElementById('download-card-btn').addEventListener('click', () => {
-                const cardElement = document.getElementById('stats-card');
-                html2canvas(cardElement, { 
-                    backgroundColor: null, // Use transparent background
-                    useCORS: true // Important for external fonts/images if you add them
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `carte-stats-${plainName.replace(/\s+/g, '-')}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                });
-            });
-        }
+        function populateDropdown(termAvgs, subjectAvgs) { /* Unchanged */ }
+        function renderDashboard(allUsersData, currentUserEncodedName, userLevel) { /* Unchanged */ }
+        function createMainWidgetHTML(title, key, levelData, currentUserData) { /* Unchanged */ }
+        function createPerformanceChart(levelData, currentUserData) { /* Unchanged */ }
+        function getRank(levelData, key, currentUserEncodedName) { /* Unchanged */ }
+        function showError(message) { /* Unchanged */ }
+        function getPercentileColor(p) { /* Unchanged */ }
+        function calculateAveragesFromRawData(data) { /* Unchanged */ }
+        function getNumericGrade(result) { /* Unchanged */ }
         
-        function createStatsCardHTML(levelData, currentUserData, plainName) {
-            const globalAvg = parseFloat(currentUserData.GlobalAverage);
-            if (isNaN(globalAvg)) return showError("Moyenne globale introuvable pour créer la carte.");
-            
-            const ranks = getRank(levelData, 'GlobalAverage', currentUserData.encodedName);
-            if (!ranks.rank) return showError("Classement introuvable pour créer la carte.");
-
-            const { tierClass, rankTitle } = getTierInfo(globalAvg);
-
-            return `
-                <div id="stats-card-container">
-                    <div class="stats-card ${tierClass}" id="stats-card">
-                        <div class="card-header">
-                            <h2 class="card-title">${plainName}</h2>
-                            <p class="card-subtitle">Étudiant de Secondaire ${currentUserData.secondaryLevel.slice(-1)}</p>
-                        </div>
-                        <div class="card-body">
-                            <div class="card-main-stat">${globalAvg.toFixed(1)}<small>%</small></div>
-                            <div class="card-rank">Classé #${ranks.rank} sur ${ranks.total}</div>
-                        </div>
-                        <div class="card-footer">
-                            <div class="card-rank-title">${rankTitle}</div>
-                        </div>
-                    </div>
-                    <button id="download-card-btn" class="download-btn">
-                        <i class="fa-solid fa-download"></i> Télécharger ma Carte
-                    </button>
-                </div>
-            `;
-        }
-        
-        function getTierInfo(average) {
-            if (average >= 95) return { tierClass: 'tier-diamond', rankTitle: 'Maître Académique' };
-            if (average >= 90) return { tierClass: 'tier-platinum', rankTitle: 'Érudit d\'Élite' };
-            if (average >= 85) return { tierClass: 'tier-gold', rankTitle: 'Virtuose Scolaire' };
-            if (average >= 80) return { tierClass: 'tier-silver', rankTitle: 'Apprenti Assidu' };
-            return { tierClass: 'tier-bronze', rankTitle: 'Potentiel Prometteur' };
-        }
-
-        // Helper functions
-        function createPerformanceChart(levelData, currentUserData) { const ctx = document.getElementById('performanceChart').getContext('2d'); const calculateGroupAvg = (etapeKey) => { const validGrades = levelData.map(u => parseFloat(u[etapeKey])).filter(g => !isNaN(g) && g > 0); return validGrades.length > 0 ? validGrades.reduce((a,b) => a + b, 0) / validGrades.length : null; }; const parseUserGrade = (grade) => (parseFloat(grade) > 0 ? parseFloat(grade) : null); const userData = [parseUserGrade(currentUserData.Etape1Average), parseUserGrade(currentUserData.Etape2Average), parseUserGrade(currentUserData.Etape3Average)]; const groupData = [calculateGroupAvg('Etape1Average'), calculateGroupAvg('Etape2Average'), calculateGroupAvg('Etape3Average')]; new Chart(ctx, { type: 'line', data: { labels: ['Étape 1', 'Étape 2', 'Étape 3'], datasets: [{ label: 'Votre Moyenne', data: userData, borderColor: '#27ae60', backgroundColor: 'rgba(39, 174, 96, 0.1)', borderWidth: 3, fill: true, tension: 0.4 }, { label: 'Moyenne du Niveau', data: groupData, borderColor: '#e74c3c', backgroundColor: 'rgba(231, 76, 60, 0.1)', borderWidth: 3, fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 50, max: 100, ticks: { callback: value => `${value}%`, color: getComputedStyle(document.body).color }, grid: { color: getComputedStyle(document.body).getPropertyValue('--border-color') } }, x: { ticks: { color: getComputedStyle(document.body).color }, grid: { color: getComputedStyle(document.body).getPropertyValue('--border-color') } } }, plugins: { legend: { position: 'top', labels: { color: getComputedStyle(document.body).color } } } } }); }
+        // Full helper functions
+        function populateDropdown(termAvgs, subjectAvgs) { let optionsHTML = '<optgroup label="Moyennes Générales">'; for (const key in overallNames) { if (termAvgs[key] !== null) optionsHTML += `<option value="${key}">${overallNames[key]}</option>`; } optionsHTML += '</optgroup><optgroup label="Matières">'; const sortedSubjects = Object.keys(subjectAvgs).sort((a,b) => (subjectNames[a] || a).localeCompare(subjectNames[b] || b)); sortedSubjects.forEach(key => { if(subjectNames[key]) optionsHTML += `<option value="${key}">${subjectNames[key]}</option>`; }); optionsHTML += `</optgroup>`; categorySelect.innerHTML = optionsHTML; }
+        function renderDashboard(allUsersData, currentUserEncodedName, userLevel) { const selectedKey = categorySelect.value; const selectedText = categorySelect.options[categorySelect.selectedIndex].text; const levelData = allUsersData.filter(d => d.secondaryLevel === userLevel); const currentUserData = levelData.find(d => d.encodedName === currentUserEncodedName); if (!currentUserData) { showError(`Vos données n'ont pas été trouvées dans le classement pour ${userLevel}.`); return; } const mainWidgetHTML = createMainWidgetHTML(selectedText, selectedKey, levelData, currentUserData); const graphHTML = `<div class="stat-widget graph-widget"><h3 class="widget-title" style="text-align:center;">Votre Performance vs. la Moyenne du Niveau</h3><div><canvas id="performanceChart"></canvas></div></div>`; dashboardContainer.innerHTML = `<div class="dashboard-grid">${mainWidgetHTML}${graphHTML}</div>`; createPerformanceChart(levelData, currentUserData); const leaderboardContainer = document.querySelector('.mini-leaderboard-container'); if (leaderboardContainer) { const userItem = leaderboardContainer.querySelector('.is-user'); if (userItem) { const containerHeight = leaderboardContainer.clientHeight; const itemHeight = userItem.offsetHeight; leaderboardContainer.scrollTop = userItem.offsetTop - (containerHeight / 2) + (itemHeight / 2); } } }
+        function createMainWidgetHTML(title, key, levelData, currentUserData) { const ranks = getRank(levelData, key, currentUserData.encodedName); const userValue = parseFloat(currentUserData[key]); if (!ranks.rank || isNaN(userValue)) { return `<div class="stat-widget main-avg-widget"><div class="widget-header"><h3 class="widget-title">${title}</h3><div style="font-size:1.5em; color: var(--light-grey);">Données insuffisantes pour classer.</div></div></div>`; } const getTrophy = (rank) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`); const leaderboardItemsHTML = levelData.filter(u => u[key] && !isNaN(parseFloat(u[key]))).sort((a, b) => b[key] - a[key]).map((user, index) => { const rank = index + 1; const isCurrentUser = user.encodedName === currentUserData.encodedName; const decodedName = isCurrentUser ? 'Vous' : `Anonyme #${rank}`; return `<li class="leaderboard-item ${isCurrentUser ? 'is-user' : ''}"><span class="item-rank">${getTrophy(rank)}</span><span class="item-name">${decodedName}</span><span class="item-grade">${parseFloat(user[key]).toFixed(1)}%</span></li>`; }).join(''); return `<div class="stat-widget main-avg-widget"><div class="widget-header"><h3 class="widget-title">${title}</h3><div class="widget-value">${userValue.toFixed(1)}%</div><div class="widget-rank">${ranks.rank} sur ${ranks.total}<span style="color:${getPercentileColor(ranks.percentile)}; margin-left: 8px;">(Top ${ranks.percentile}%)</span></div></div><div class="mini-leaderboard-container"><ul class="leaderboard-list">${leaderboardItemsHTML}</ul></div></div>`; }
+        function createPerformanceChart(levelData, currentUserData) { const ctx = document.getElementById('performanceChart').getContext('2d'); const calculateGroupAvg = (etapeKey) => { const validGrades = levelData.map(u => parseFloat(u[etapeKey])).filter(g => !isNaN(g) && g > 0); return validGrades.length > 0 ? validGrades.reduce((a,b) => a + b, 0) / validGrades.length : null; }; const parseUserGrade = (grade) => (parseFloat(grade) > 0 ? parseFloat(grade) : null); const userData = [parseUserGrade(currentUserData.Etape1Average), parseUserGrade(currentUserData.Etape2Average), parseUserGrade(currentUserData.Etape3Average)]; const groupData = [calculateGroupAvg('Etape1Average'), calculateGroupAvg('Etape2Average'), calculateGroupAvg('Etape3Average')]; new Chart(ctx, { type: 'line', data: { labels: ['Étape 1', 'Étape 2', 'Étape 3'], datasets: [{ label: 'Votre Moyenne', data: userData, borderColor: 'rgba(39, 174, 96, 1)', backgroundColor: 'rgba(39, 174, 96, 0.1)', borderWidth: 3, fill: true, tension: 0.4 }, { label: 'Moyenne du Niveau', data: groupData, borderColor: 'rgba(231, 76, 60, 1)', backgroundColor: 'rgba(231, 76, 60, 0.1)', borderWidth: 3, fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 50, max: 100, ticks: { callback: value => `${value}%` } } }, plugins: { legend: { position: 'top' } } } }); }
         function getRank(levelData, key, currentUserEncodedName) { const scores = levelData.map(row => parseFloat(row[key])).filter(score => !isNaN(score)); scores.sort((a, b) => b - a); const currentUser = levelData.find(d => d.encodedName === currentUserEncodedName); const currentUserValue = currentUser ? parseFloat(currentUser[key]) : NaN; const rank = scores.indexOf(currentUserValue) + 1; const percentile = (scores.length > 0) ? (scores.length - rank + 1) / scores.length * 100 : 0; return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? percentile.toFixed(1) : null }; }
         function showError(message) { dashboardContainer.innerHTML = `<div class="error-message">${message}</div>`; logToConsole(message, true); }
+        function getPercentileColor(p) { if (p <= 10) return 'var(--success-color)'; if (p <= 25) return 'var(--primary-color)'; if (p <= 50) return '#f39c12'; return 'var(--danger-color)'; }
         function calculateAveragesFromRawData(data) {let termAverages = {GlobalAverage:null, Etape1Average: null, Etape2Average: null, Etape3Average: null}; let allSubjectAverages = {}; let subjectCounts = {}; ['etape1', 'etape2', 'etape3'].forEach(etape => { if (!data[etape]) return; let termSubjectAverages = []; data[etape].forEach(subject => { let subjectTotal = 0, subjectWeight = 0; subject.competencies.forEach(comp => { const compWeightMatch = comp.name.match(/\((\d+)%\)/); if (!compWeightMatch) return; const compWeight = parseFloat(compWeightMatch[1]); let compTotal = 0, compAssignWeight = 0; comp.assignments.forEach(assign => { const grade = getNumericGrade(assign.result); const weight = parseFloat(assign.pond); if (grade !== null && !isNaN(weight) && weight > 0) { compTotal += grade * weight; compAssignWeight += weight; } }); if (compAssignWeight > 0) { subjectTotal += (compTotal / compAssignWeight) * (compWeight / 100); subjectWeight += (compWeight / 100); } }); if (subjectWeight > 0) { const subjectAverage = subjectTotal / subjectWeight; termSubjectAverages.push(subjectAverage); const code = subject.code.substring(0, 3); allSubjectAverages[code] = (allSubjectAverages[code] || 0) + subjectAverage; subjectCounts[code] = (subjectCounts[code] || 0) + 1; } }); if (termSubjectAverages.length > 0) { const etapeKey = 'Etape' + etape.slice(-1) + 'Average'; termAverages[etapeKey] = termSubjectAverages.reduce((a, b) => a + b, 0) / termSubjectAverages.length; } }); for (const code in allSubjectAverages) { allSubjectAverages[code] /= subjectCounts[code]; } let globalTotal = 0, globalWeight = 0; if(termAverages.Etape1Average !== null) {globalTotal += termAverages.Etape1Average * TERM_WEIGHTS.etape1; globalWeight += TERM_WEIGHTS.etape1}; if(termAverages.Etape2Average !== null) {globalTotal += termAverages.Etape2Average * TERM_WEIGHTS.etape2; globalWeight += TERM_WEIGHTS.etape2}; if(termAverages.Etape3Average !== null) {globalTotal += termAverages.Etape3Average * TERM_WEIGHTS.etape3; globalWeight += TERM_WEIGHTS.etape3}; if (globalWeight > 0) termAverages.GlobalAverage = globalTotal / globalWeight; return { term: termAverages, subjects: allSubjectAverages }; }
         function getNumericGrade(result) { if (!result) return null; const gradeMap = {'A+':100,'A':95,'A-':90,'B+':85,'B':80,'B-':75,'C+':70,'C':65,'C-':60,'D+':55,'D':50,'E':45}; const trimmed = result.trim(); if(gradeMap[trimmed]) return gradeMap[trimmed]; const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/); if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.')); const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/); if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const max = parseFloat(scoreMatch[2].replace(',', '.')); return (max > 0) ? (score / max) * 100 : null; } const plainNumber = parseFloat(trimmed); if(!isNaN(plainNumber) && plainNumber >=0 && plainNumber <= 110) return plainNumber; return null; }
     
