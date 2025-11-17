@@ -29,6 +29,8 @@ function init() {
     }
     mbsData.settings = mbsData.settings || {};
     mbsData.settings.chartViewPrefs = mbsData.settings.chartViewPrefs || {};
+    mbsData.settings.historyMode = mbsData.settings.historyMode || {}; // --- ADDED BACK ---
+    mbsData.settings.assignmentOrder = mbsData.settings.assignmentOrder || {}; // --- ADDED BACK ---
     mbsData.historique = mbsData.historique || {};
 
     setupEventListeners();
@@ -160,6 +162,7 @@ function renderWidgets(etapeKey) {
         widget.className = 'subject-widget';
         const chartCanvasId = `dist-chart-${subject.code.replace(/\s+/g, '')}`;
         
+        // --- MODIFIED --- Added the order-edit-btn back
         widget.innerHTML = `
             <div class="widget-top-section">
                 <div class="widget-info">
@@ -170,6 +173,7 @@ function renderWidgets(etapeKey) {
                 <div class="gauge-container"><canvas id="gauge-${chartCanvasId}"></canvas></div>
             </div>
             <div class="widget-chart-controls">
+                 <button class="chart-toggle-btn order-edit-btn" title="Ordonner les travaux"><i class="fa-solid fa-list-ol"></i></button>
                  <button class="chart-toggle-btn chart-view-toggle-btn" title="Changer de vue"><i class="fa-solid fa-chart-line"></i></button>
             </div>
             <div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
@@ -180,16 +184,14 @@ function renderWidgets(etapeKey) {
         renderGauge(`gauge-${chartCanvasId}`, subject.average);
 
         const preferredView = mbsData.settings.chartViewPrefs[subject.code] || 'histogram';
-        const toggleBtn = widget.querySelector('.chart-view-toggle-btn');
         if (preferredView === 'line') {
             renderLineGraph(chartCanvasId, overallSubject);
-            toggleBtn.innerHTML = '<i class="fa-solid fa-chart-column"></i>';
         } else {
             renderHistogram(chartCanvasId, overallSubject);
-            toggleBtn.innerHTML = '<i class="fa-solid fa-chart-line"></i>';
         }
 
-        toggleBtn.addEventListener('click', (e) => {
+        // --- MODIFIED --- Added back the event listeners for both buttons
+        widget.querySelector('.chart-view-toggle-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             const currentView = mbsData.settings.chartViewPrefs[subject.code] || 'histogram';
             const newView = currentView === 'histogram' ? 'line' : 'histogram';
@@ -198,15 +200,18 @@ function renderWidgets(etapeKey) {
             if (activeWidgetCharts[chartCanvasId]) activeWidgetCharts[chartCanvasId].destroy();
             if (newView === 'line') {
                 renderLineGraph(chartCanvasId, overallSubject);
-                toggleBtn.innerHTML = '<i class="fa-solid fa-chart-column"></i>';
             } else {
                 renderHistogram(chartCanvasId, overallSubject);
-                toggleBtn.innerHTML = '<i class="fa-solid fa-chart-line"></i>';
             }
+        });
+        
+        widget.querySelector('.order-edit-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openOrderEditor(overallSubject);
         });
     });
 }
-
+// ... (renderGeneralAverageWidget remains the same)
 function renderGeneralAverageWidget(subjects, etapeKey) {
     if (subjects.length === 0) return;
     
@@ -268,7 +273,109 @@ function renderGeneralAverageWidget(subjects, etapeKey) {
     });
 }
 
-// --- EXPANDED VIEW LOGIC ---
+
+// --- ADDED BACK --- The entire order editor function
+function openOrderEditor(subject) {
+    const existingModal = document.getElementById('order-editor-modal');
+    if(existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'order-editor-modal';
+    // Use a temporary overlay style or create a dedicated one
+    modal.style.cssText = `position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; display:flex; align-items:center; justify-content:center;`;
+
+    const allAssignments = (subject.competencies || [])
+        .flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })))
+        .filter(a => getNumericGrade(a.result) !== null);
+
+    const currentOrder = mbsData.settings.assignmentOrder[subject.code] || [];
+    if (currentOrder.length > 0) {
+        const orderMap = new Map(currentOrder.map((id, index) => [id, index]));
+        allAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity));
+    }
+    
+    modal.innerHTML = `
+        <div style="background:var(--widget-background); color:var(--text-color); padding:25px; border-radius:12px; width:90%; max-width:600px;">
+            <h3>Ordonner les Travaux pour le Graphique</h3>
+            <p style="color:var(--text-secondary-color); text-align:center;">Glissez-déposez pour réorganiser l'ordre des points sur le graphique.</p>
+            <ul id="order-list" style="list-style:none; padding:0; margin: 0 0 20px 0; max-height: 40vh; overflow-y: auto;">
+                ${allAssignments.map(assign => `
+                    <li draggable="true" data-id="${assign.uniqueId}" style="background:var(--background-color); margin-bottom:8px; padding:10px 15px; border-radius:5px; display:flex; align-items:center; cursor:grab; border:1px solid var(--border-color);">
+                        <i class="fa-solid fa-grip-vertical" style="margin-right:15px;"></i>
+                        ${assign.work.replace('<br>', ' ')} 
+                        <span style="margin-left:auto; background:var(--widget-background); padding:3px 8px; border-radius:10px; font-size:0.8em; border:1px solid var(--border-color);">${assign.result}</span>
+                    </li>
+                `).join('')}
+            </ul>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button id="reset-mode-btn" class="btn-secondary">Mode moyenne auto</button>
+                <div>
+                    <button id="close-order-editor" class="btn-secondary">Annuler</button>
+                    <button id="save-order" class="btn-secondary" style="background-color:var(--success-color); margin-left:10px;">Sauvegarder</button>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+
+    const content = modal.querySelector('div');
+    content.addEventListener('click', e => e.stopPropagation());
+    const list = modal.querySelector('#order-list');
+    let draggedItem = null;
+
+    list.addEventListener('dragstart', e => {
+        draggedItem = e.target;
+        setTimeout(() => e.target.style.opacity = '0.5', 0);
+    });
+    list.addEventListener('dragend', e => {
+        setTimeout(() => {
+            if(draggedItem) {
+                draggedItem.style.opacity = '1';
+                draggedItem = null;
+            }
+        }, 0);
+    });
+    list.addEventListener('dragover', e => {
+        e.preventDefault();
+        const afterElement = [...list.querySelectorAll('li:not(.dragging)')].reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = e.clientY - box.top - box.height / 2;
+            return (offset < 0 && offset > closest.offset) ? { offset: offset, element: child } : closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+        
+        if (draggedItem) {
+            if (afterElement == null) {
+                list.appendChild(draggedItem);
+            } else {
+                list.insertBefore(draggedItem, afterElement);
+            }
+        }
+    });
+
+    const closeModal = () => {
+        modal.remove();
+        renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
+    };
+
+    modal.addEventListener('click', closeModal);
+    modal.querySelector('#save-order').addEventListener('click', () => {
+        const newOrder = [...list.querySelectorAll('li')].map(li => li.dataset.id);
+        mbsData.settings.assignmentOrder[subject.code] = newOrder;
+        mbsData.settings.historyMode[subject.code] = 'assignment';
+        localStorage.setItem('mbsData', JSON.stringify(mbsData));
+        closeModal();
+    });
+
+    modal.querySelector('#reset-mode-btn').addEventListener('click', () => {
+        delete mbsData.settings.assignmentOrder[subject.code];
+        delete mbsData.settings.historyMode[subject.code];
+        localStorage.setItem('mbsData', JSON.stringify(mbsData));
+        closeModal();
+    });
+
+    modal.querySelector('#close-order-editor').addEventListener('click', closeModal);
+}
+
+// ... (Expanded view functions remain the same)
 function openExpandedView(subject) {
     expandedViewGrid.innerHTML = '';
     
@@ -352,7 +459,8 @@ function populateDetailsWidget(widget, subject) {
     setupGoalFramework(subject, widget.querySelector('.calculator-container'));
 }
 
-// --- RANKING LOGIC ---
+
+// ... (Ranking logic remains the same)
 async function fetchRankingData() {
     if (rankingData.status === 'loading' || rankingData.status === 'loaded') return;
     
@@ -369,11 +477,8 @@ async function fetchRankingData() {
         for (const key in localAvgs.term) formData.append(key, localAvgs.term[key]?.toFixed(2) ?? '');
         for (const key in localAvgs.subjects) formData.append(key, localAvgs.subjects[key]?.toFixed(2) ?? '');
         
-        // This is a 'best effort' POST. We don't wait for it.
-        // Using 'no-cors' can sometimes help with Google Scripts, but be aware of its limitations.
         fetch(SCRIPT_URL, { method: 'POST', body: formData, mode: 'no-cors' });
         
-        // We prioritize getting the data for the user.
         const getResponse = await fetch(`${SCRIPT_URL}?level=${mbsData.settings.niveau}`);
         if (!getResponse.ok) throw new Error(`Erreur réseau: ${getResponse.statusText}`);
         const allData = await getResponse.json();
@@ -405,7 +510,7 @@ function populateRankingWidget(widget, subject) {
     const subjectCode = subject.code.substring(0, 3);
     const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom)));
     
-    const levelData = rankingData.data; // Already filtered by the GET request
+    const levelData = rankingData.data;
     const currentUserData = levelData.find(d => d.encodedName === encodedName);
     
     if (!currentUserData || !(subjectCode in currentUserData)) {
@@ -468,6 +573,7 @@ function renderGauge(canvasId, value) {
     });
 }
 
+// --- MODIFIED --- This function now controls button visibility
 function renderHistogram(canvasId, subject, chartStore = activeWidgetCharts) {
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
@@ -477,27 +583,66 @@ function renderHistogram(canvasId, subject, chartStore = activeWidgetCharts) {
         if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++;
         else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++;
     });
-    const ctx = document.getElementById(canvasId).getContext('2d');
+    const ctx = document.getElementById(canvasId)?.getContext('2d');
+    if (!ctx) return;
     chartStore[canvasId] = new Chart(ctx, {
         type: 'bar',
         data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] },
         options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
     });
+
+    // Control button visibility
+    const widget = ctx.canvas.closest('.subject-widget');
+    if (widget && chartStore === activeWidgetCharts) {
+        widget.querySelector('.chart-view-toggle-btn').innerHTML = '<i class="fa-solid fa-chart-line"></i>';
+        widget.querySelector('.order-edit-btn').style.display = 'none';
+    }
 }
 
+// --- MODIFIED --- This function now controls button visibility
 function renderLineGraph(canvasId, subject, chartStore = activeWidgetCharts) {
-    const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
-    const chartData = {
-        labels: history.map((_, i) => `Moyenne ${i + 1}`),
-        datasets: [{ label: 'Moyenne', data: history, borderColor: '#3498db', pointBackgroundColor: '#3498db', pointRadius: 5 }]
-    };
-    const ctx = document.getElementById(canvasId).getContext('2d');
+    const mode = mbsData.settings.historyMode[subject.code] || 'average';
+    let chartData;
+
+    if (mode === 'assignment') {
+        const allAssignments = (subject.competencies || [])
+            .flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })))
+            .filter(a => getNumericGrade(a.result) !== null);
+
+        const order = mbsData.settings.assignmentOrder[subject.code] || [];
+        if (order.length > 0) {
+            const orderMap = new Map(order.map((id, index) => [id, index]));
+            allAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity));
+        }
+        
+        chartData = {
+            labels: allAssignments.map(a => a.work.replace('<br>', ' ')),
+            datasets: [{ label: 'Note', data: allAssignments.map(a => getNumericGrade(a.result)), borderColor: '#3498db', pointBackgroundColor: '#3498db', pointRadius: 5 }]
+        };
+    } else {
+        const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
+        chartData = {
+            labels: history.map((_, i) => `Moyenne ${i + 1}`),
+            datasets: [{ label: 'Moyenne', data: history, borderColor: '#3498db', pointBackgroundColor: '#3498db', pointRadius: 5 }]
+        };
+    }
+    
+    const ctx = document.getElementById(canvasId)?.getContext('2d');
+    if (!ctx) return;
     chartStore[canvasId] = new Chart(ctx, {
         type: 'line', data: chartData,
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100 }, x: { ticks: { display: false }, grid: { display: false } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Historique des moyennes' } } }
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100 }, x: { ticks: { display: false }, grid: { display: false } } }, plugins: { legend: { display: false }, title: { display: true, text: mode === 'assignment' ? 'Ordre des travaux' : 'Historique des moyennes' } } }
     });
+
+    // Control button visibility
+    const widget = ctx.canvas.closest('.subject-widget');
+    if (widget && chartStore === activeWidgetCharts) {
+        widget.querySelector('.chart-view-toggle-btn').innerHTML = '<i class="fa-solid fa-chart-column"></i>';
+        widget.querySelector('.order-edit-btn').style.display = 'flex';
+    }
 }
 
+// ... (Other chart and helper functions remain the same)
 function renderAssignmentsChart(assignments) {
     if (activeExpandedCharts['assignmentsChart']) activeExpandedCharts['assignmentsChart'].destroy();
     
@@ -569,7 +714,6 @@ function renderRankingComparisonChart(canvasId, levelData, currentUserData) {
     });
 }
 
-// --- RANKING HELPER FUNCTIONS ---
 function getRank(levelData, key, currentUserEncodedName) {
     const scores = levelData.map(row => parseFloat(row[key])).filter(score => !isNaN(score));
     scores.sort((a, b) => b - a);
@@ -577,7 +721,7 @@ function getRank(levelData, key, currentUserEncodedName) {
     const currentUserValue = currentUser ? parseFloat(currentUser[key]) : NaN;
     const rank = scores.indexOf(currentUserValue) + 1;
     const percentile = (scores.length > 0) ? (1 - ((rank - 1) / scores.length)) * 100 : 0;
-    return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? (100 - percentile + (1 / scores.length * 100)).toFixed(1) : null };
+    return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? (percentile).toFixed(1) : null };
 }
 
 function calculateAveragesFromRawData(data) {
@@ -615,7 +759,6 @@ function calculateAveragesFromRawData(data) {
     return { term: termAverages, subjects: finalSubjectAvgs };
 }
 
-// --- GOAL FRAMEWORK ---
 function setupGoalFramework(subject, container) {
     container.innerHTML = `
         <h3>Planificateur d'Objectifs</h3>
@@ -642,35 +785,49 @@ function setupIntraSubjectCalculator(subject, container, goalInput) {
     const calcInfo = container.querySelector('#calc-info');
     
     const calculate = () => {
-        let sumOfWeightedGrades = 0, sumOfCompletedWeights = 0, sumOfFutureWeights = 0, sumOfTotalWeights = 0;
+        let sumOfWeightedGrades = 0, sumOfCompletedWeights = 0, sumOfFutureWeights = 0;
+        let totalSubjectWeight = 0;
+
         (subject.competencies || []).forEach(comp => {
             const compWeightMatch = comp.name.match(/\((\d+)%\)/);
             if (!compWeightMatch) return;
-            const competencyWeight = parseFloat(compWeightMatch[1]) / 100;
+            const competencyWeight = parseFloat(compWeightMatch[1]);
+            totalSubjectWeight += competencyWeight;
 
             (comp.assignments || []).forEach(assign => {
-                const weight = parseFloat(assign.pond) * competencyWeight;
+                const weight = parseFloat(assign.pond);
                 if (isNaN(weight) || weight <= 0) return;
-                sumOfTotalWeights += weight;
+                
+                // Weight is relative to competency, then competency relative to subject
+                const finalWeight = (weight / 100) * competencyWeight;
                 const grade = getNumericGrade(assign.result);
+                
                 if (grade !== null) {
-                    sumOfWeightedGrades += grade * weight;
-                    sumOfCompletedWeights += weight;
+                    sumOfWeightedGrades += grade * finalWeight;
+                    sumOfCompletedWeights += finalWeight;
                 } else { 
-                    sumOfFutureWeights += weight; 
+                    sumOfFutureWeights += finalWeight; 
                 }
             });
         });
         
-        if (sumOfFutureWeights <= 0) { calcInfo.textContent = 'Tous les travaux ont été notés.'; goalResult.style.display = 'none'; return; }
+        if (sumOfFutureWeights.toFixed(4) < 0.0001) {
+            calcInfo.textContent = 'Tous les travaux ont été notés.';
+            goalResult.style.display = 'none';
+            return;
+        }
 
         const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
         calcInfo.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong>`;
         
         const targetAvg = parseFloat(goalInput.value);
-        if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) { goalResult.innerHTML = 'Veuillez entrer un objectif.'; goalResult.className = 'goal-result'; return; }
+        if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
+            goalResult.innerHTML = 'Veuillez entrer un objectif valide.';
+            goalResult.className = 'goal-result';
+            return;
+        }
         
-        const totalPointsNeeded = targetAvg * sumOfTotalWeights;
+        const totalPointsNeeded = targetAvg * totalSubjectWeight;
         const pointsNeededFromFuture = totalPointsNeeded - sumOfWeightedGrades;
         const requiredAvgOnFuture = pointsNeededFromFuture / sumOfFutureWeights;
         
