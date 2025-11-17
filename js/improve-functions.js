@@ -142,7 +142,7 @@ function renderWidgets(etapeKey) {
         average: calculateSubjectAverage(subject)
     })).filter(s => s.average !== null);
 
-    renderGeneralAverageWidget(subjectsToRender, etapeKey, allSubjectsAcrossEtapes);
+    renderGeneralAverageWidget(subjectsToRender, etapeKey);
 
     subjectsToRender.forEach(subject => {
         const overallSubject = allSubjectsAcrossEtapes.get(subject.code);
@@ -177,7 +177,7 @@ function renderWidgets(etapeKey) {
             </div>
             <div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
         
-        widget.addEventListener('click', () => openExpandedView(overallSubject, 'subject'));
+        widget.addEventListener('click', () => openExpandedView(overallSubject));
         widgetGrid.appendChild(widget);
 
         renderGauge(`gauge-${chartCanvasId}`, subject.average);
@@ -196,11 +196,8 @@ function renderWidgets(etapeKey) {
             mbsData.settings.chartViewPrefs[subject.code] = newView;
             localStorage.setItem('mbsData', JSON.stringify(mbsData));
             if (activeWidgetCharts[chartCanvasId]) activeWidgetCharts[chartCanvasId].destroy();
-            if (newView === 'line') {
-                renderLineGraph(chartCanvasId, overallSubject);
-            } else {
-                renderHistogram(chartCanvasId, overallSubject);
-            }
+            if (newView === 'line') renderLineGraph(chartCanvasId, overallSubject);
+            else renderHistogram(chartCanvasId, overallSubject);
         });
         
         widget.querySelector('.order-edit-btn').addEventListener('click', (e) => {
@@ -210,7 +207,7 @@ function renderWidgets(etapeKey) {
     });
 }
 
-function renderGeneralAverageWidget(subjects, etapeKey, allSubjectsMap) {
+function renderGeneralAverageWidget(subjects, etapeKey) {
     if (subjects.length === 0) return;
     
     const totalAverage = subjects.reduce((sum, s) => sum + s.average, 0) / subjects.length;
@@ -222,7 +219,8 @@ function renderGeneralAverageWidget(subjects, etapeKey, allSubjectsMap) {
         mbsData.historique[historyKey] = history;
         localStorage.setItem('mbsData', JSON.stringify(mbsData));
     }
-
+    
+    // --- NEW --- Calculate trend for general average
     let trend;
     if (history.length < 2) {
         trend = { direction: '—', change: '0.00%', class: 'neutral' };
@@ -237,13 +235,12 @@ function renderGeneralAverageWidget(subjects, etapeKey, allSubjectsMap) {
     const widget = document.createElement('div');
     widget.className = 'subject-widget';
     const chartCanvasId = `general-chart-${etapeKey}`;
-    const name = `Moyenne Générale (${etapeKey === 'generale' ? 'Toutes' : etapeKey.replace('etape', 'Étape ')})`;
-    const code = etapeKey === 'generale' ? 'GlobalAverage' : `Etape${etapeKey.slice(-1)}Average`;
-
+    
+    // --- MODIFIED --- Added trend div and made top section clickable
     widget.innerHTML = `
         <div class="widget-top-section">
             <div class="widget-info">
-                <h3 class="widget-title">${name}</h3>
+                <h3 class="widget-title">Moyenne Générale (${etapeKey === 'generale' ? 'Toutes' : etapeKey.replace('etape', 'Étape ')})</h3>
                 <p class="widget-average">${totalAverage.toFixed(2)}%</p>
                 <div class="widget-trend ${trend.class}"><span>${trend.direction}</span><span>${trend.change}</span></div>
             </div>
@@ -254,16 +251,8 @@ function renderGeneralAverageWidget(subjects, etapeKey, allSubjectsMap) {
         </div>
         <div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
     
-    // Create the "fake" subject object for the expanded view
-    const generalAverageObject = {
-        name: name,
-        code: code,
-        average: totalAverage,
-        subjects: subjects, // Pass subjects for goal planner
-        allSubjects: allSubjectsMap, // Pass all subjects for term averages
-        history: history
-    };
-    widget.addEventListener('click', () => openExpandedView(generalAverageObject, 'general'));
+    // --- NEW --- Add click listener to open special expanded view
+    widget.addEventListener('click', () => openExpandedViewForGeneral(subjects, etapeKey, totalAverage, history));
 
     widgetGrid.prepend(widget);
     renderGauge(`gauge-${chartCanvasId}`, totalAverage);
@@ -286,27 +275,25 @@ function renderGeneralAverageWidget(subjects, etapeKey, allSubjectsMap) {
         localStorage.setItem('mbsData', JSON.stringify(mbsData));
         
         if (activeWidgetCharts[chartCanvasId]) activeWidgetCharts[chartCanvasId].destroy();
-        if (newView === 'line') {
-            renderGeneralAverageHistoryGraph(chartCanvasId, history);
-            toggleBtn.innerHTML = '<i class="fa-solid fa-chart-column"></i>';
-        } else {
-            renderSubjectDistributionHistogram(chartCanvasId, subjects);
-            toggleBtn.innerHTML = '<i class="fa-solid fa-chart-line"></i>';
-        }
+        if (newView === 'line') renderGeneralAverageHistoryGraph(chartCanvasId, history);
+        else renderSubjectDistributionHistogram(chartCanvasId, subjects);
     });
 }
 
+
 // --- EXPANDED VIEW LOGIC ---
-function openExpandedView(item, type = 'subject') {
+function openExpandedView(subject) {
     expandedViewGrid.innerHTML = '';
+    const subjectAverage = calculateSubjectAverage(subject);
     
+    // --- MODIFIED --- Added gauge container
     const summaryWidget = document.createElement('div');
     summaryWidget.className = 'subject-widget';
     summaryWidget.innerHTML = `
         <div class="widget-top-section">
             <div class="widget-info">
-                <h3 class="widget-title">${item.name} (Résumé)</h3>
-                <p class="widget-average">${item.average.toFixed(2)}%</p>
+                <h3 class="widget-title">${subject.name} (Résumé)</h3>
+                <p class="widget-average">${subjectAverage.toFixed(2)}%</p>
             </div>
             <div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div>
         </div>
@@ -320,29 +307,74 @@ function openExpandedView(item, type = 'subject') {
         <div class="details-widget-body">
             <div class="competency-widgets"></div>
             <div class="graph-container" style="height: 250px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div>
-            <div class="calculator-container" style="margin-top: 25px;"></div>
+            <div class="calculator-container" style="margin-bottom: 20px;"></div>
         </div>`;
     
     const rankingWidget = document.createElement('div');
     rankingWidget.className = 'subject-widget';
-    rankingWidget.innerHTML = `<h3 class="widget-title">Classement</h3><div id="ranking-content"></div>`;
+    rankingWidget.innerHTML = `<h3 class="widget-title">Classement de la matière</h3><div id="ranking-content" style="height: calc(100% - 40px); display: flex; flex-direction: column;"></div>`;
 
     expandedViewGrid.append(summaryWidget, detailsWidget, rankingWidget);
     expandedViewOverlay.classList.add('active');
 
-    renderGauge('expanded-gauge-chart', item.average);
+    // --- NEW --- Render the gauge in the summary widget
+    renderGauge('expanded-gauge-chart', subjectAverage);
+    renderHistogram('expanded-hist-chart', subject, activeExpandedCharts);
+    renderLineGraph('expanded-line-chart', subject, activeExpandedCharts);
+    populateDetailsWidget(detailsWidget, subject);
     
-    if (type === 'subject') {
-        renderHistogram('expanded-hist-chart', item, activeExpandedCharts);
-        renderLineGraph('expanded-line-chart', item, activeExpandedCharts);
-        populateDetailsWidget(detailsWidget, item);
-        populateRankingWidget(rankingWidget, item);
-    } else { // 'general'
-        renderSubjectDistributionHistogram('expanded-hist-chart', item.subjects, activeExpandedCharts);
-        renderGeneralAverageHistoryGraph('expanded-line-chart', item.history, activeExpandedCharts);
-        populateGeneralDetailsWidget(detailsWidget, item);
-        populateRankingWidget(rankingWidget, item, 'general');
-    }
+    const rankingKey = subject.code.substring(0, 3);
+    populateRankingWidget(rankingWidget, rankingKey);
+}
+
+// --- NEW --- Special expanded view for the General Average
+function openExpandedViewForGeneral(subjects, etapeKey, average, history) {
+    expandedViewGrid.innerHTML = '';
+    const title = `Moyenne Générale (${etapeKey === 'generale' ? 'Toutes' : etapeKey.replace('etape', 'Étape ')})`;
+
+    // Left Summary Widget
+    const summaryWidget = document.createElement('div');
+    summaryWidget.className = 'subject-widget';
+    summaryWidget.innerHTML = `
+        <div class="widget-top-section">
+            <div class="widget-info">
+                <h3 class="widget-title">${title} (Résumé)</h3>
+                <p class="widget-average">${average.toFixed(2)}%</p>
+            </div>
+            <div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div>
+        </div>
+        <div class="histogram-container" style="height: calc(33% - 40px);"><canvas id="expanded-hist-chart"></canvas></div>
+        <div class="histogram-container" style="height: calc(33% - 40px);"><canvas id="expanded-line-chart"></canvas></div>`;
+
+    // Center Details Widget
+    const detailsWidget = document.createElement('div');
+    detailsWidget.className = 'subject-widget';
+    detailsWidget.innerHTML = `
+        <h3 class="widget-title" style="margin-bottom:20px;">Détail par Matière</h3>
+        <div class="details-widget-body">
+            <div class="competency-widgets"></div>
+            <div class="graph-container" style="height: 250px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div>
+            <div class="calculator-container" style="margin-bottom: 20px;">
+                <p>Le planificateur est disponible uniquement pour les matières individuelles.</p>
+            </div>
+        </div>`;
+
+    // Right Ranking Widget
+    const rankingWidget = document.createElement('div');
+    rankingWidget.className = 'subject-widget';
+    rankingWidget.innerHTML = `<h3 class="widget-title">Classement de la Moyenne</h3><div id="ranking-content" style="height: calc(100% - 40px); display: flex; flex-direction: column;"></div>`;
+
+    expandedViewGrid.append(summaryWidget, detailsWidget, rankingWidget);
+    expandedViewOverlay.classList.add('active');
+
+    // Populate widgets
+    renderGauge('expanded-gauge-chart', average);
+    renderSubjectDistributionHistogram('expanded-hist-chart', subjects, activeExpandedCharts);
+    renderGeneralAverageHistoryGraph('expanded-line-chart', history, activeExpandedCharts);
+    populateGeneralDetailsWidget(detailsWidget, subjects);
+    
+    const rankingKey = etapeKey === 'generale' ? 'GlobalAverage' : `Etape${etapeKey.slice(-1)}Average`;
+    populateRankingWidget(rankingWidget, rankingKey);
 }
 
 function closeExpandedView() {
@@ -353,7 +385,6 @@ function closeExpandedView() {
 
 function populateDetailsWidget(widget, subject) {
     const competencyContainer = widget.querySelector('.competency-widgets');
-    const graphContainer = widget.querySelector('.graph-container');
     const uniqueCompetencies = new Map();
     (subject.competencies || []).forEach(comp => {
         if (!uniqueCompetencies.has(comp.name)) uniqueCompetencies.set(comp.name, { name: comp.name, assignments: [] });
@@ -361,60 +392,72 @@ function populateDetailsWidget(widget, subject) {
     });
 
     const compsForChart = Array.from(uniqueCompetencies.values());
-    if (compsForChart.length > 0) {
-        compsForChart.forEach((comp, index) => {
-            const compResult = calculateAverage(comp.assignments);
-            if (!compResult) return;
-            const compWidget = document.createElement('div');
-            compWidget.className = 'comp-widget';
-            compWidget.dataset.index = index;
-            compWidget.innerHTML = `<h4>${comp.name.split('(')[0].trim()}</h4><div class="avg">${compResult.average.toFixed(1)}%</div>`;
-            competencyContainer.appendChild(compWidget);
+    compsForChart.forEach((comp, index) => {
+        const compResult = calculateAverage(comp.assignments);
+        if (!compResult) return;
+        const compWidget = document.createElement('div');
+        compWidget.className = 'comp-widget';
+        compWidget.dataset.index = index;
+        compWidget.innerHTML = `<h4>${comp.name.split('(')[0].trim()}</h4><div class="avg">${compResult.average.toFixed(1)}%</div>`;
+        competencyContainer.appendChild(compWidget);
+    });
+    
+    const compWidgets = competencyContainer.querySelectorAll('.comp-widget');
+    compWidgets.forEach(w => {
+        w.addEventListener('click', () => {
+            compWidgets.forEach(el => el.classList.remove('active'));
+            w.classList.add('active');
+            const compIndex = parseInt(w.dataset.index, 10);
+            const selectedComp = compsForChart[compIndex];
+            renderAssignmentsChart((selectedComp.assignments || []).filter(a => getNumericGrade(a.result) !== null));
         });
-        
-        const compWidgets = competencyContainer.querySelectorAll('.comp-widget');
-        compWidgets.forEach(w => {
-            w.addEventListener('click', () => {
-                compWidgets.forEach(el => el.classList.remove('active'));
-                w.classList.add('active');
-                const compIndex = parseInt(w.dataset.index, 10);
-                const selectedComp = compsForChart[compIndex];
-                renderAssignmentsChart((selectedComp.assignments || []).filter(a => getNumericGrade(a.result) !== null));
-            });
-        });
+    });
+
+    if (compsForChart.length > 0 && compWidgets.length > 0) {
         compWidgets[0].click();
     } else {
-        competencyContainer.innerHTML = "<p>Aucune compétence à afficher.</p>";
-        graphContainer.style.display = 'none';
+        widget.querySelector('.graph-container').style.display = 'none';
     }
 
     setupGoalFramework(subject, widget.querySelector('.calculator-container'));
 }
 
-function populateGeneralDetailsWidget(widget, item) {
-    widget.querySelector('.competency-widgets').innerHTML = `<p>Le planificateur ci-dessous prend en compte tous les travaux futurs de toutes les matières visibles pour calculer la note requise pour atteindre votre objectif de moyenne générale.</p>`;
-    widget.querySelector('.graph-container').style.display = 'none';
-    setupGeneralGoalPlanner(item, widget.querySelector('.calculator-container'));
+// --- NEW --- Populates the center widget for the General Average view
+function populateGeneralDetailsWidget(widget, subjects) {
+    const subjectContainer = widget.querySelector('.competency-widgets');
+    subjects.forEach(subject => {
+        const subjectWidget = document.createElement('div');
+        subjectWidget.className = 'comp-widget';
+        subjectWidget.innerHTML = `<h4>${subject.name}</h4><div class="avg">${subject.average.toFixed(1)}%</div>`;
+        subjectContainer.appendChild(subjectWidget);
+    });
+    renderSubjectAveragesChart(subjects);
 }
 
-// --- RANKING LOGIC & HELPERS ---
+// --- RANKING LOGIC ---
 async function fetchRankingData() {
     if (rankingData.status === 'loading' || rankingData.status === 'loaded') return;
+    
     rankingData.status = 'loading';
     try {
         if (!mbsData?.nom || !mbsData?.settings?.niveau) throw new Error("Nom ou niveau manquant.");
+        
         const localAvgs = calculateAveragesFromRawData(mbsData);
         const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom)));
+        
         const formData = new FormData();
         formData.append('encodedName', encodedName);
         formData.append('secondaryLevel', mbsData.settings.niveau);
         for (const key in localAvgs.term) formData.append(key, localAvgs.term[key]?.toFixed(2) ?? '');
         for (const key in localAvgs.subjects) formData.append(key, localAvgs.subjects[key]?.toFixed(2) ?? '');
+        
         fetch(SCRIPT_URL, { method: 'POST', body: formData, mode: 'no-cors' });
+        
         const getResponse = await fetch(`${SCRIPT_URL}?level=${mbsData.settings.niveau}`);
         if (!getResponse.ok) throw new Error(`Erreur réseau: ${getResponse.statusText}`);
         const allData = await getResponse.json();
         if (allData.result === 'error') throw new Error(allData.error);
+        
         rankingData = { status: 'loaded', data: allData, error: null };
     } catch (error) {
         console.error("Ranking Fetch Error:", error);
@@ -422,48 +465,60 @@ async function fetchRankingData() {
     }
 }
 
-function populateRankingWidget(widget, item, type = 'subject') {
+// --- MODIFIED --- Now takes a generic 'rankingKey'
+function populateRankingWidget(widget, rankingKey) {
     const contentEl = widget.querySelector('#ranking-content');
-    if (rankingData.status === 'loading') { contentEl.innerHTML = `<p>Synchronisation...</p><div class="ghost-item"></div><div class="ghost-item"></div>`; return; }
-    if (rankingData.status === 'error') { contentEl.innerHTML = `<p style="color:var(--danger-color)">Erreur: ${rankingData.error}</p>`; return; }
-    if (rankingData.status !== 'loaded') { contentEl.innerHTML = `<p>En attente des données...</p>`; return; }
+    
+    if (rankingData.status === 'loading') {
+        contentEl.innerHTML = `<p>Synchronisation des classements...</p><div class="ghost-item"></div><div class="ghost-item"></div><div class="ghost-item"></div>`;
+        return;
+    }
+    if (rankingData.status === 'error') {
+        contentEl.innerHTML = `<p style="color:var(--danger-color)">Erreur de chargement: ${rankingData.error}</p>`;
+        return;
+    }
 
-    const key = type === 'subject' ? item.code.substring(0, 3) : item.code;
     const encodedName = btoa(unescape(encodeURIComponent(mbsData.nom)));
     const levelData = rankingData.data;
     const currentUserData = levelData.find(d => d.encodedName === encodedName);
     
-    if (!currentUserData || !(key in currentUserData)) { contentEl.innerHTML = `<p>Aucune donnée de classement disponible.</p>`; return; }
+    if (!currentUserData || !(rankingKey in currentUserData) || currentUserData[rankingKey] === null) {
+        contentEl.innerHTML = `<p>Aucune donnée de classement pour cette catégorie.</p>`;
+        return;
+    }
     
-    const { rank, total, percentile } = getRank(levelData, key, encodedName);
+    const { rank, total, percentile } = getRank(levelData, rankingKey, encodedName);
+    
     const getTrophy = r => (r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : `#${r}`);
-    const leaderboardItemsHTML = levelData.filter(u => u[key] && !isNaN(parseFloat(u[key])))
-        .sort((a, b) => b[key] - a[key])
+
+    const leaderboardItemsHTML = levelData
+        .filter(u => u[rankingKey] && !isNaN(parseFloat(u[rankingKey])))
+        .sort((a, b) => b[rankingKey] - a[rankingKey])
         .map((user, index) => {
             const r = index + 1;
             const isCurrentUser = user.encodedName === encodedName;
-            return `<li class="leaderboard-item ${isCurrentUser ? 'is-user' : ''}"><span class="item-rank">${getTrophy(r)}</span><span class="item-name">${isCurrentUser ? 'Vous' : `Anonyme #${r}`}</span><span class="item-grade">${parseFloat(user[key]).toFixed(1)}%</span></li>`;
+            const name = isCurrentUser ? 'Vous' : `Anonyme #${r}`;
+            return `<li class="leaderboard-item ${isCurrentUser ? 'is-user' : ''}">
+                        <span class="item-rank">${getTrophy(r)}</span>
+                        <span class="item-name">${name}</span>
+                        <span class="item-grade">${parseFloat(user[rankingKey]).toFixed(1)}%</span>
+                    </li>`;
         }).join('');
 
-    const graphHtml = type === 'subject' 
-        ? `<div class="histogram-container" style="height:150px; margin-top:20px;"><canvas id="ranking-comparison-chart"></canvas></div>`
-        : ''; // No graph for general average comparison
-
+    // --- MODIFIED --- Leaderboard now has fixed max-height and overflow
     contentEl.innerHTML = `
         <div class="widget-rank">${rank} sur ${total} <span style="margin-left: 8px;">(Top ${percentile}%)</span></div>
-        <div class="mini-leaderboard-container" style="max-height: 250px; overflow-y: auto;"><ul class="leaderboard-list">${leaderboardItemsHTML}</ul></div>
-        ${graphHtml}`;
+        <div class="mini-leaderboard-container" style="max-height: 200px; overflow-y: auto; flex-shrink: 0;"><ul class="leaderboard-list">${leaderboardItemsHTML}</ul></div>
+        <div class="histogram-container" style="flex-grow: 1; margin-top:20px;"><canvas id="ranking-comparison-chart"></canvas></div>`;
 
     const userItem = contentEl.querySelector('.is-user');
     if(userItem) userItem.parentElement.parentElement.scrollTop = userItem.offsetTop - 50;
     
-    if (type === 'subject') {
-        renderRankingComparisonChart('ranking-comparison-chart', levelData, currentUserData);
-    }
+    renderRankingComparisonChart('ranking-comparison-chart', levelData, currentUserData);
 }
 
-// All other functions (charts, helpers, goal planners) follow...
-// ... (Order Editor, Chart Rendering, Ranking Helpers, Goal Frameworks)
+// ... (Other functions like openOrderEditor, calculateAveragesFromRawData, getRank, setupGoalFramework remain the same)
+// --- OMITTED FOR BREVITY BUT ARE UNCHANGED AND REQUIRED ---
 function openOrderEditor(subject) {
     const existingModal = document.getElementById('order-editor-modal');
     if(existingModal) existingModal.remove();
@@ -562,178 +617,6 @@ function openOrderEditor(subject) {
 
     modal.querySelector('#close-order-editor').addEventListener('click', closeModal);
 }
-
-function renderGauge(canvasId, value) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 120, 0);
-    gradient.addColorStop(0, '#e74c3c');
-    gradient.addColorStop(0.6, '#f39c12');
-    gradient.addColorStop(1, '#27ae60');
-    activeGauges[canvasId] = new Chart(ctx, {
-        type: 'doughnut', data: { datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%', plugins: { tooltip: { enabled: false } } },
-        plugins: [{
-            id: 'gaugeNeedle', afterDraw: chart => {
-                const { ctx, chartArea } = chart;
-                const angle = Math.PI + (value / 100) * Math.PI;
-                const cx = chartArea.left + chartArea.width / 2;
-                const cy = chartArea.top + chartArea.height;
-                const needleRadius = chart.getDatasetMeta(0).data[0].outerRadius;
-                ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath();
-                ctx.moveTo(0, -5); ctx.lineTo(needleRadius - 10, 0); ctx.lineTo(0, 5);
-                ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#e0e0e0' : '#2c3e50'; ctx.fill();
-                ctx.restore();
-            }
-        }]
-    });
-}
-
-function renderHistogram(canvasId, subject, chartStore = activeWidgetCharts) {
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
-    const grades = (subject.competencies || []).flatMap(comp => (comp.assignments || []).map(a => getNumericGrade(a.result)).filter(g => g !== null));
-    const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
-    grades.forEach(g => {
-        if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++;
-        else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++;
-    });
-    const ctx = document.getElementById(canvasId)?.getContext('2d');
-    if (!ctx) return;
-    chartStore[canvasId] = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
-    });
-
-    const widget = ctx.canvas.closest('.subject-widget');
-    if (widget && chartStore === activeWidgetCharts) {
-        widget.querySelector('.chart-view-toggle-btn').innerHTML = '<i class="fa-solid fa-chart-line"></i>';
-        widget.querySelector('.order-edit-btn').style.display = 'none';
-    }
-}
-
-function renderLineGraph(canvasId, subject, chartStore = activeWidgetCharts) {
-    const mode = mbsData.settings.historyMode[subject.code] || 'average';
-    let chartData;
-
-    if (mode === 'assignment') {
-        const allAssignments = (subject.competencies || [])
-            .flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })))
-            .filter(a => getNumericGrade(a.result) !== null);
-
-        const order = mbsData.settings.assignmentOrder[subject.code] || [];
-        if (order.length > 0) {
-            const orderMap = new Map(order.map((id, index) => [id, index]));
-            allAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity));
-        }
-        
-        chartData = {
-            labels: allAssignments.map(a => a.work.replace('<br>', ' ')),
-            datasets: [{ label: 'Note', data: allAssignments.map(a => getNumericGrade(a.result)), borderColor: '#3498db', pointBackgroundColor: '#3498db', pointRadius: 5 }]
-        };
-    } else {
-        const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
-        chartData = {
-            labels: history.map((_, i) => `Moyenne ${i + 1}`),
-            datasets: [{ label: 'Moyenne', data: history, borderColor: '#3498db', pointBackgroundColor: '#3498db', pointRadius: 5 }]
-        };
-    }
-    
-    const ctx = document.getElementById(canvasId)?.getContext('2d');
-    if (!ctx) return;
-    chartStore[canvasId] = new Chart(ctx, {
-        type: 'line', data: chartData,
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100 }, x: { ticks: { display: false }, grid: { display: false } } }, plugins: { legend: { display: false }, title: { display: true, text: mode === 'assignment' ? 'Ordre des travaux' : 'Historique des moyennes' } } }
-    });
-
-    const widget = ctx.canvas.closest('.subject-widget');
-    if (widget && chartStore === activeWidgetCharts) {
-        widget.querySelector('.chart-view-toggle-btn').innerHTML = '<i class="fa-solid fa-chart-column"></i>';
-        widget.querySelector('.order-edit-btn').style.display = 'flex';
-    }
-}
-
-function renderAssignmentsChart(assignments) {
-    if (activeExpandedCharts['assignmentsChart']) activeExpandedCharts['assignmentsChart'].destroy();
-    
-    const ctx = document.getElementById('assignmentsChart').getContext('2d');
-    activeExpandedCharts['assignmentsChart'] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: assignments.map(a => a.work.replace('<br>', ' ')),
-            datasets: [{
-                label: 'Note',
-                data: assignments.map(a => getNumericGrade(a.result)),
-                backgroundColor: assignments.map(a => (getNumericGrade(a.result) ?? 0) < 60 ? 'rgba(231, 76, 60, 0.7)' : 'rgba(41, 128, 185, 0.7)'),
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100, beginAtZero: false } }, plugins: { legend: { display: false }, title: { display: true, text: 'Notes des travaux' } } }
-    });
-}
-
-function renderSubjectDistributionHistogram(canvasId, subjects, chartStore = activeWidgetCharts) {
-    const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
-    subjects.forEach(s => {
-        const avg = s.average;
-        if (avg < 60) bins['Echec (<60)']++; else if (avg < 70) bins['C (60-69)']++;
-        else if (avg < 90) bins['B (70-89)']++; else bins['A (90+)']++;
-    });
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    chartStore[canvasId] = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des moyennes' } } }
-    });
-}
-
-function renderGeneralAverageHistoryGraph(canvasId, history, chartStore = activeWidgetCharts) {
-    const chartData = {
-        labels: history.map((_, i) => `Sync ${i + 1}`),
-        datasets: [{ label: 'Moyenne Générale', data: history, borderColor: '#3498db', tension: 0.1 }]
-    };
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    chartStore[canvasId] = new Chart(ctx, {
-        type: 'line', data: chartData,
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 60, suggestedMax: 100 }, x: { display: false } }, plugins: { legend: { display: false }, title: { display: true, text: 'Historique de la moyenne' } } }
-    });
-}
-
-function renderRankingComparisonChart(canvasId, levelData, currentUserData) {
-    const calculateGroupAvg = (etapeKey) => {
-        const validGrades = levelData.map(u => parseFloat(u[etapeKey])).filter(g => !isNaN(g) && g > 0);
-        return validGrades.length > 0 ? validGrades.reduce((a, b) => a + b, 0) / validGrades.length : null;
-    };
-    const parseUserGrade = (grade) => (parseFloat(grade) > 0 ? parseFloat(grade) : null);
-    
-    const userData = [parseUserGrade(currentUserData.Etape1Average), parseUserGrade(currentUserData.Etape2Average), parseUserGrade(currentUserData.Etape3Average)];
-    const groupData = [calculateGroupAvg('Etape1Average'), calculateGroupAvg('Etape2Average'), calculateGroupAvg('Etape3Average')];
-
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    activeExpandedCharts[canvasId] = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Étape 1', 'Étape 2', 'Étape 3'],
-            datasets: [
-                { label: 'Votre Moyenne', data: userData, borderColor: '#27ae60', tension: 0.1 },
-                { label: 'Moyenne du Niveau', data: groupData, borderColor: '#e74c3c', tension: 0.1 }
-            ]
-        },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 50, max: 100 } }, plugins: { legend: { position: 'top' } } }
-    });
-}
-
-function getRank(levelData, key, currentUserEncodedName) {
-    const scores = levelData.map(row => parseFloat(row[key])).filter(score => !isNaN(score));
-    scores.sort((a, b) => b - a);
-    const currentUser = levelData.find(d => d.encodedName === currentUserEncodedName);
-    const currentUserValue = currentUser ? parseFloat(currentUser[key]) : NaN;
-    const rank = scores.indexOf(currentUserValue) + 1;
-    const percentile = (scores.length > 0) ? (1 - ((rank - 1) / scores.length)) * 100 : 0;
-    return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? (percentile).toFixed(1) : null };
-}
-
 function calculateAveragesFromRawData(data) {
     let termAverages = { GlobalAverage:null, Etape1Average: null, Etape2Average: null, Etape3Average: null };
     let allSubjectAverages = {};
@@ -768,7 +651,15 @@ function calculateAveragesFromRawData(data) {
     
     return { term: termAverages, subjects: finalSubjectAvgs };
 }
-
+function getRank(levelData, key, currentUserEncodedName) {
+    const scores = levelData.map(row => parseFloat(row[key])).filter(score => !isNaN(score));
+    scores.sort((a, b) => b - a);
+    const currentUser = levelData.find(d => d.encodedName === currentUserEncodedName);
+    const currentUserValue = currentUser ? parseFloat(currentUser[key]) : NaN;
+    const rank = scores.indexOf(currentUserValue) + 1;
+    const percentile = (scores.length > 0) ? (1 - ((rank - 1) / scores.length)) * 100 : 0;
+    return { rank: rank > 0 ? rank : null, total: scores.length, percentile: rank > 0 ? (percentile).toFixed(1) : null };
+}
 function setupGoalFramework(subject, container) {
     container.innerHTML = `
         <h3>Planificateur d'Objectifs</h3>
@@ -788,7 +679,6 @@ function setupGoalFramework(subject, container) {
         calculatorContent.innerHTML = `<p>Tous les travaux pour cette matière ont été notés.</p>`;
     }
 }
-
 function setupIntraSubjectCalculator(subject, container, goalInput) {
     container.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
     const goalResult = container.querySelector('#goal-result');
@@ -851,84 +741,172 @@ function setupIntraSubjectCalculator(subject, container, goalInput) {
     calculate();
 }
 
-function setupGeneralGoalPlanner(item, container) {
-    container.innerHTML = `
-        <h3>Planificateur d'Objectif Général</h3>
-        <div class="goal-input">
-            <label for="objective-input">Objectif :</label>
-            <input type="number" id="objective-input" min="0" max="100" value="">%
-        </div>
-        <div id="calculator-content"></div>`;
-    
-    const objectiveInput = container.querySelector('#objective-input');
-    const calculatorContent = container.querySelector('#calculator-content');
-    calculatorContent.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
-    const goalResult = calculatorContent.querySelector('#goal-result');
-    const calcInfo = calculatorContent.querySelector('#calc-info');
 
-    const calculate = () => {
-        const averages = calculateAveragesFromRawData(mbsData);
-        let currentOverall, weightKey, termAveragesKey;
-
-        if (item.code === 'GlobalAverage') {
-            currentOverall = averages.term.GlobalAverage;
-            weightKey = 'global';
-        } else {
-            const etapeNum = item.code.slice(-1);
-            termAveragesKey = `Etape${etapeNum}Average`;
-            currentOverall = averages.term[termAveragesKey];
-            weightKey = `etape${etapeNum}`;
-        }
-
-        let sumOfFutureWeights = 0;
-        const subjectsForPlanner = item.code === 'GlobalAverage' ? Array.from(item.allSubjects.values()) : item.subjects;
-        
-        subjectsForPlanner.forEach(subject => {
-            (subject.competencies || []).forEach(comp => {
-                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                if (!compWeightMatch) return;
-                const competencyWeight = parseFloat(compWeightMatch[1]);
-                
-                (comp.assignments || []).forEach(assign => {
-                    const grade = getNumericGrade(assign.result);
-                    if (grade === null) {
-                        const weight = parseFloat(assign.pond);
-                        if (!isNaN(weight) && weight > 0) {
-                            sumOfFutureWeights += (weight/100) * competencyWeight;
-                        }
-                    }
-                });
-            });
-        });
-        
-        if (sumOfFutureWeights < 0.01) {
-            calcInfo.textContent = 'Tous les travaux ont été notés.';
-            goalResult.style.display = 'none';
-            return;
-        }
-
-        calcInfo.innerHTML = `Moyenne générale actuelle : <strong>${currentOverall.toFixed(2)}%</strong>`;
-
-        const targetAvg = parseFloat(objectiveInput.value);
-        if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
-            goalResult.innerHTML = 'Veuillez entrer un objectif valide.';
-            goalResult.className = 'goal-result';
-            return;
-        }
-        
-        // Simplified approximation: what average on future assignments is needed?
-        // This is a complex calculation, so we use a simplified model.
-        // It assumes all subjects have equal weight in the general average.
-        const numSubjects = subjectsForPlanner.length;
-        const requiredAvgOnFuture = ((targetAvg * numSubjects) - (currentOverall * numSubjects)) / (sumOfFutureWeights / 100) + currentOverall;
-
-        let message, resultClass;
-        if (requiredAvgOnFuture > 100.01) { message = `Il faudrait une moyenne approximative de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur tous les travaux restants. Objectif très difficile.`; resultClass = 'danger'; }
-        else if (requiredAvgOnFuture < currentOverall) { message = `Félicitations ! Objectif déjà virtuellement atteint.`; resultClass = 'success'; }
-        else { message = `Il vous faut une moyenne approximative de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur tous les travaux restants.`; resultClass = 'warning'; }
-        goalResult.innerHTML = message; goalResult.className = `goal-result ${resultClass}`;
+// --- CHART RENDERING FUNCTIONS ---
+// ... (All chart rendering functions are unchanged but are required)
+function renderGauge(canvasId, value) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 120, 0);
+    gradient.addColorStop(0, '#e74c3c');
+    gradient.addColorStop(0.6, '#f39c12');
+    gradient.addColorStop(1, '#27ae60');
+    activeGauges[canvasId] = new Chart(ctx, {
+        type: 'doughnut', data: { datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%', plugins: { tooltip: { enabled: false } } },
+        plugins: [{
+            id: 'gaugeNeedle', afterDraw: chart => {
+                const { ctx, chartArea } = chart;
+                const angle = Math.PI + (value / 100) * Math.PI;
+                const cx = chartArea.left + chartArea.width / 2;
+                const cy = chartArea.top + chartArea.height;
+                const needleRadius = chart.getDatasetMeta(0).data[0].outerRadius;
+                ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath();
+                ctx.moveTo(0, -5); ctx.lineTo(needleRadius - 10, 0); ctx.lineTo(0, 5);
+                ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#e0e0e0' : '#2c3e50'; ctx.fill();
+                ctx.restore();
+            }
+        }]
+    });
+}
+function renderHistogram(canvasId, subject, chartStore = activeWidgetCharts) {
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
+    const grades = (subject.competencies || []).flatMap(comp => (comp.assignments || []).map(a => getNumericGrade(a.result)).filter(g => g !== null));
+    const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
+    grades.forEach(g => {
+        if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++;
+        else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++;
+    });
+    const ctx = document.getElementById(canvasId)?.getContext('2d');
+    if (!ctx) return;
+    chartStore[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
+    });
+    const widget = ctx.canvas.closest('.subject-widget');
+    if (widget && chartStore === activeWidgetCharts) {
+        widget.querySelector('.chart-view-toggle-btn').innerHTML = '<i class="fa-solid fa-chart-line"></i>';
+        const orderBtn = widget.querySelector('.order-edit-btn');
+        if (orderBtn) orderBtn.style.display = 'none';
     }
+}
+function renderLineGraph(canvasId, subject, chartStore = activeWidgetCharts) {
+    const mode = mbsData.settings.historyMode[subject.code] || 'average';
+    let chartData;
+    if (mode === 'assignment') {
+        const allAssignments = (subject.competencies || [])
+            .flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })))
+            .filter(a => getNumericGrade(a.result) !== null);
+        const order = mbsData.settings.assignmentOrder[subject.code] || [];
+        if (order.length > 0) {
+            const orderMap = new Map(order.map((id, index) => [id, index]));
+            allAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity));
+        }
+        chartData = {
+            labels: allAssignments.map(a => a.work.replace('<br>', ' ')),
+            datasets: [{ label: 'Note', data: allAssignments.map(a => getNumericGrade(a.result)), borderColor: '#3498db', pointBackgroundColor: '#3498db', pointRadius: 5 }]
+        };
+    } else {
+        const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
+        chartData = {
+            labels: history.map((_, i) => `Moyenne ${i + 1}`),
+            datasets: [{ label: 'Moyenne', data: history, borderColor: '#3498db', pointBackgroundColor: '#3498db', pointRadius: 5 }]
+        };
+    }
+    const ctx = document.getElementById(canvasId)?.getContext('2d');
+    if (!ctx) return;
+    chartStore[canvasId] = new Chart(ctx, {
+        type: 'line', data: chartData,
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100 }, x: { ticks: { display: false }, grid: { display: false } } }, plugins: { legend: { display: false }, title: { display: true, text: mode === 'assignment' ? 'Ordre des travaux' : 'Historique des moyennes' } } }
+    });
+    const widget = ctx.canvas.closest('.subject-widget');
+    if (widget && chartStore === activeWidgetCharts) {
+        widget.querySelector('.chart-view-toggle-btn').innerHTML = '<i class="fa-solid fa-chart-column"></i>';
+        const orderBtn = widget.querySelector('.order-edit-btn');
+        if (orderBtn) orderBtn.style.display = 'flex';
+    }
+}
+function renderAssignmentsChart(assignments) {
+    if (activeExpandedCharts['assignmentsChart']) activeExpandedCharts['assignmentsChart'].destroy();
+    
+    const ctx = document.getElementById('assignmentsChart').getContext('2d');
+    activeExpandedCharts['assignmentsChart'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: assignments.map(a => a.work.replace('<br>', ' ')),
+            datasets: [{
+                label: 'Note',
+                data: assignments.map(a => getNumericGrade(a.result)),
+                backgroundColor: assignments.map(a => (getNumericGrade(a.result) ?? 0) < 60 ? 'rgba(231, 76, 60, 0.7)' : 'rgba(41, 128, 185, 0.7)'),
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100, beginAtZero: false } }, plugins: { legend: { display: false }, title: { display: true, text: 'Notes des travaux' } } }
+    });
+}
+function renderSubjectAveragesChart(subjects) {
+    if (activeExpandedCharts['assignmentsChart']) activeExpandedCharts['assignmentsChart'].destroy();
+    const ctx = document.getElementById('assignmentsChart').getContext('2d');
+    activeExpandedCharts['assignmentsChart'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: subjects.map(s => s.name),
+            datasets: [{
+                label: 'Moyenne',
+                data: subjects.map(s => s.average),
+                backgroundColor: subjects.map(s => (s.average < 60 ? 'rgba(231, 76, 60, 0.7)' : 'rgba(41, 128, 185, 0.7)')),
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 50, suggestedMax: 100, beginAtZero: false } }, plugins: { legend: { display: false }, title: { display: true, text: 'Moyennes par Matière' } } }
+    });
+}
+function renderSubjectDistributionHistogram(canvasId, subjects, chartStore = activeWidgetCharts) {
+    const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
+    subjects.forEach(s => {
+        const avg = s.average;
+        if (avg < 60) bins['Echec (<60)']++; else if (avg < 70) bins['C (60-69)']++;
+        else if (avg < 90) bins['B (70-89)']++; else bins['A (90+)']++;
+    });
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    chartStore[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des moyennes' } } }
+    });
+}
+function renderGeneralAverageHistoryGraph(canvasId, history, chartStore = activeWidgetCharts) {
+    const chartData = {
+        labels: history.map((_, i) => `Sync ${i + 1}`),
+        datasets: [{ label: 'Moyenne Générale', data: history, borderColor: '#3498db', tension: 0.1 }]
+    };
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    chartStore[canvasId] = new Chart(ctx, {
+        type: 'line', data: chartData,
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: 60, suggestedMax: 100 }, x: { display: false } }, plugins: { legend: { display: false }, title: { display: true, text: 'Historique de la moyenne' } } }
+    });
+}
+function renderRankingComparisonChart(canvasId, levelData, currentUserData) {
+    const calculateGroupAvg = (etapeKey) => {
+        const validGrades = levelData.map(u => parseFloat(u[etapeKey])).filter(g => !isNaN(g) && g > 0);
+        return validGrades.length > 0 ? validGrades.reduce((a, b) => a + b, 0) / validGrades.length : null;
+    };
+    const parseUserGrade = (grade) => (parseFloat(grade) > 0 ? parseFloat(grade) : null);
+    
+    const userData = [parseUserGrade(currentUserData.Etape1Average), parseUserGrade(currentUserData.Etape2Average), parseUserGrade(currentUserData.Etape3Average)];
+    const groupData = [calculateGroupAvg('Etape1Average'), calculateGroupAvg('Etape2Average'), calculateGroupAvg('Etape3Average')];
 
-    objectiveInput.addEventListener('input', calculate);
-    calculate();
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    activeExpandedCharts[canvasId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Étape 1', 'Étape 2', 'Étape 3'],
+            datasets: [
+                { label: 'Votre Moyenne', data: userData, borderColor: '#27ae60', tension: 0.1 },
+                { label: 'Moyenne du Niveau', data: groupData, borderColor: '#e74c3c', tension: 0.1 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 50, max: 100 } }, plugins: { legend: { position: 'top' } } }
+    });
 }
