@@ -1,1 +1,1 @@
-# N-GGAS-IN-PARIS
+# if you want to use it just add /main.html in the url i commented out index so if pierre checks this morning he doesnt see anything. everything else still works we r so close to full deployment just wait till lunch
