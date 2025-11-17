@@ -4,7 +4,7 @@ const subjectNames = { 'ART':"Arts", 'MUS':"Musique", 'DRM':"Art Dram.", 'CAT':"
 const TERM_WEIGHTS = { etape1:0.20, etape2:0.20, etape3:0.60 };
 
 let mbsData = {};
-let rankingData = { status: 'idle', data: null, error: null }; // idle, loading, loaded, error
+let rankingData = { status: 'idle', data: null, error: null }; 
 
 let activeGauges = {};
 let activeWidgetCharts = {};
@@ -220,7 +220,6 @@ function renderGeneralAverageWidget(subjects, etapeKey) {
         localStorage.setItem('mbsData', JSON.stringify(mbsData));
     }
     
-    // --- NEW --- Calculate trend for general average
     let trend;
     if (history.length < 2) {
         trend = { direction: '—', change: '0.00%', class: 'neutral' };
@@ -236,7 +235,6 @@ function renderGeneralAverageWidget(subjects, etapeKey) {
     widget.className = 'subject-widget';
     const chartCanvasId = `general-chart-${etapeKey}`;
     
-    // --- MODIFIED --- Added trend div and made top section clickable
     widget.innerHTML = `
         <div class="widget-top-section">
             <div class="widget-info">
@@ -251,7 +249,6 @@ function renderGeneralAverageWidget(subjects, etapeKey) {
         </div>
         <div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
     
-    // --- NEW --- Add click listener to open special expanded view
     widget.addEventListener('click', () => openExpandedViewForGeneral(subjects, etapeKey, totalAverage, history));
 
     widgetGrid.prepend(widget);
@@ -286,28 +283,34 @@ function openExpandedView(subject) {
     expandedViewGrid.innerHTML = '';
     const subjectAverage = calculateSubjectAverage(subject);
     
-    // --- MODIFIED --- Added gauge container
     const summaryWidget = document.createElement('div');
     summaryWidget.className = 'subject-widget';
+    // --- 1/3 Height Logic (Flexbox) ---
     summaryWidget.innerHTML = `
-        <div class="widget-top-section">
-            <div class="widget-info">
-                <h3 class="widget-title">${subject.name} (Résumé)</h3>
-                <p class="widget-average">${subjectAverage.toFixed(2)}%</p>
+        <div style="height:100%; display:flex; flex-direction:column; gap: 10px;">
+            <div class="widget-top-section" style="flex: 1; align-items: center;">
+                <div class="widget-info">
+                    <h3 class="widget-title">${subject.name} (Résumé)</h3>
+                    <p class="widget-average">${subjectAverage.toFixed(2)}%</p>
+                </div>
+                <div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div>
             </div>
-            <div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div>
-        </div>
-        <div class="histogram-container" style="height: calc(33% - 40px);"><canvas id="expanded-hist-chart"></canvas></div>
-        <div class="histogram-container" style="height: calc(33% - 40px);"><canvas id="expanded-line-chart"></canvas></div>`;
+            <div class="histogram-container" style="flex: 1; margin:0;"><canvas id="expanded-hist-chart"></canvas></div>
+            <div class="histogram-container" style="flex: 1; margin:0;"><canvas id="expanded-line-chart"></canvas></div>
+        </div>`;
     
     const detailsWidget = document.createElement('div');
     detailsWidget.className = 'subject-widget';
+    // --- Button & Vertical Org ---
     detailsWidget.innerHTML = `
-        <h3 class="widget-title" style="margin-bottom:20px;">Détails & Planificateur</h3>
-        <div class="details-widget-body">
+        <h3 class="widget-title" style="margin-bottom:15px;">Détails & Planificateur</h3>
+        <div class="details-widget-body" style="display:flex; flex-direction:column; height: calc(100% - 40px);">
             <div class="competency-widgets"></div>
-            <div class="graph-container" style="height: 250px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div>
-            <div class="calculator-container" style="margin-bottom: 20px;"></div>
+            <div class="graph-container" style="height: 200px; flex-shrink: 0; position: relative;"><canvas id="assignmentsChart"></canvas></div>
+            <div class="calculator-container" style="margin-top: 15px; flex-shrink: 0;"></div>
+            <div style="margin-top: auto; padding-top: 15px;">
+                <a href="projection.html" class="btn-secondary" style="display:block; text-align:center; width:100%; padding: 10px; border-radius: 8px; box-sizing: border-box;">En savoir plus sur la projection</a>
+            </div>
         </div>`;
     
     const rankingWidget = document.createElement('div');
@@ -317,7 +320,6 @@ function openExpandedView(subject) {
     expandedViewGrid.append(summaryWidget, detailsWidget, rankingWidget);
     expandedViewOverlay.classList.add('active');
 
-    // --- NEW --- Render the gauge in the summary widget
     renderGauge('expanded-gauge-chart', subjectAverage);
     renderHistogram('expanded-hist-chart', subject, activeExpandedCharts);
     renderLineGraph('expanded-line-chart', subject, activeExpandedCharts);
@@ -327,7 +329,6 @@ function openExpandedView(subject) {
     populateRankingWidget(rankingWidget, rankingKey);
 }
 
-// --- NEW --- Special expanded view for the General Average
 function openExpandedViewForGeneral(subjects, etapeKey, average, history) {
     expandedViewGrid.innerHTML = '';
     const title = `Moyenne Générale (${etapeKey === 'generale' ? 'Toutes' : etapeKey.replace('etape', 'Étape ')})`;
@@ -335,27 +336,31 @@ function openExpandedViewForGeneral(subjects, etapeKey, average, history) {
     // Left Summary Widget
     const summaryWidget = document.createElement('div');
     summaryWidget.className = 'subject-widget';
+    // --- 1/3 Height Logic (Flexbox) ---
     summaryWidget.innerHTML = `
-        <div class="widget-top-section">
-            <div class="widget-info">
-                <h3 class="widget-title">${title} (Résumé)</h3>
-                <p class="widget-average">${average.toFixed(2)}%</p>
+        <div style="height:100%; display:flex; flex-direction:column; gap: 10px;">
+            <div class="widget-top-section" style="flex: 1; align-items: center;">
+                <div class="widget-info">
+                    <h3 class="widget-title">${title} (Résumé)</h3>
+                    <p class="widget-average">${average.toFixed(2)}%</p>
+                </div>
+                <div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div>
             </div>
-            <div class="gauge-container"><canvas id="expanded-gauge-chart"></canvas></div>
-        </div>
-        <div class="histogram-container" style="height: calc(33% - 40px);"><canvas id="expanded-hist-chart"></canvas></div>
-        <div class="histogram-container" style="height: calc(33% - 40px);"><canvas id="expanded-line-chart"></canvas></div>`;
+            <div class="histogram-container" style="flex: 1; margin:0;"><canvas id="expanded-hist-chart"></canvas></div>
+            <div class="histogram-container" style="flex: 1; margin:0;"><canvas id="expanded-line-chart"></canvas></div>
+        </div>`;
 
     // Center Details Widget
     const detailsWidget = document.createElement('div');
     detailsWidget.className = 'subject-widget';
+    // --- Button & Vertical Org ---
     detailsWidget.innerHTML = `
-        <h3 class="widget-title" style="margin-bottom:20px;">Détail par Matière</h3>
-        <div class="details-widget-body">
-            <div class="competency-widgets"></div>
-            <div class="graph-container" style="height: 250px; margin-top: 20px; position: relative;"><canvas id="assignmentsChart"></canvas></div>
-            <div class="calculator-container" style="margin-bottom: 20px;">
-                <p>Le planificateur est disponible uniquement pour les matières individuelles.</p>
+        <h3 class="widget-title" style="margin-bottom:15px;">Détail par Matière</h3>
+        <div class="details-widget-body" style="display:flex; flex-direction:column; height: calc(100% - 40px);">
+            <div class="competency-widgets" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
+            <div class="graph-container" style="flex: 1; min-height: 150px; position: relative;"><canvas id="assignmentsChart"></canvas></div>
+            <div style="margin-top: auto; padding-top: 15px;">
+                <a href="projection.html" class="btn-secondary" style="display:block; text-align:center; width:100%; padding: 10px; border-radius: 8px; box-sizing: border-box;">En savoir plus sur la projection</a>
             </div>
         </div>`;
 
@@ -422,13 +427,14 @@ function populateDetailsWidget(widget, subject) {
     setupGoalFramework(subject, widget.querySelector('.calculator-container'));
 }
 
-// --- NEW --- Populates the center widget for the General Average view
 function populateGeneralDetailsWidget(widget, subjects) {
     const subjectContainer = widget.querySelector('.competency-widgets');
     subjects.forEach(subject => {
         const subjectWidget = document.createElement('div');
         subjectWidget.className = 'comp-widget';
-        subjectWidget.innerHTML = `<h4>${subject.name}</h4><div class="avg">${subject.average.toFixed(1)}%</div>`;
+        // --- MODIFIED --- Small, thin bubbles
+        subjectWidget.style.cssText = 'padding: 8px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; min-width: auto; width: 100%; box-sizing: border-box; font-size: 0.95em;';
+        subjectWidget.innerHTML = `<span style="font-weight:600;">${subject.name}</span><span>${subject.average.toFixed(1)}%</span>`;
         subjectContainer.appendChild(subjectWidget);
     });
     renderSubjectAveragesChart(subjects);
@@ -465,7 +471,6 @@ async function fetchRankingData() {
     }
 }
 
-// --- MODIFIED --- Now takes a generic 'rankingKey'
 function populateRankingWidget(widget, rankingKey) {
     const contentEl = widget.querySelector('#ranking-content');
     
@@ -505,7 +510,6 @@ function populateRankingWidget(widget, rankingKey) {
                     </li>`;
         }).join('');
 
-    // --- MODIFIED --- Leaderboard now has fixed max-height and overflow
     contentEl.innerHTML = `
         <div class="widget-rank">${rank} sur ${total} <span style="margin-left: 8px;">(Top ${percentile}%)</span></div>
         <div class="mini-leaderboard-container" style="max-height: 200px; overflow-y: auto; flex-shrink: 0;"><ul class="leaderboard-list">${leaderboardItemsHTML}</ul></div>
@@ -517,8 +521,6 @@ function populateRankingWidget(widget, rankingKey) {
     renderRankingComparisonChart('ranking-comparison-chart', levelData, currentUserData);
 }
 
-// ... (Other functions like openOrderEditor, calculateAveragesFromRawData, getRank, setupGoalFramework remain the same)
-// --- OMITTED FOR BREVITY BUT ARE UNCHANGED AND REQUIRED ---
 function openOrderEditor(subject) {
     const existingModal = document.getElementById('order-editor-modal');
     if(existingModal) existingModal.remove();
@@ -743,7 +745,6 @@ function setupIntraSubjectCalculator(subject, container, goalInput) {
 
 
 // --- CHART RENDERING FUNCTIONS ---
-// ... (All chart rendering functions are unchanged but are required)
 function renderGauge(canvasId, value) {
     const ctx = document.getElementById(canvasId).getContext('2d');
     const gradient = ctx.createLinearGradient(0, 0, 120, 0);
