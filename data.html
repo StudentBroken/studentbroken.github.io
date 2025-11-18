@@ -236,22 +236,16 @@
         const tutorialModal = document.getElementById('tutorial-modal');
         const rawTextArea = document.getElementById('raw-text');
         const themeToggleBtn = document.getElementById('theme-toggle');
-        const html = document.documentElement; // Target the <html> tag for theme attribute
+        const html = document.documentElement;
         const toggleIcon = themeToggleBtn.querySelector('i');
 
         // --- Dark Mode Logic (Standardized) ---
-        const THEME_KEY = 'mbs-theme'; // Use a consistent key
+        const THEME_KEY = 'mbs-theme';
 
         const updateTheme = (theme) => {
             html.setAttribute('data-theme', theme);
             localStorage.setItem(THEME_KEY, theme);
-            if (theme === 'dark') {
-                toggleIcon.classList.remove('fa-moon');
-                toggleIcon.classList.add('fa-sun');
-            } else {
-                toggleIcon.classList.remove('fa-sun');
-                toggleIcon.classList.add('fa-moon');
-            }
+            toggleIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         };
 
         const storedTheme = localStorage.getItem(THEME_KEY);
@@ -259,8 +253,7 @@
         updateTheme(initialTheme);
 
         themeToggleBtn.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             updateTheme(newTheme);
         });
 
@@ -275,18 +268,14 @@
 
         // --- Core Paste & Save Logic ---
         rawTextArea.addEventListener('paste', (e) => {
-            // Animation temporaire sur la zone de texte
             rawTextArea.style.boxShadow = '0 0 0 5px var(--primary-color)';
-            setTimeout(() => {
-                rawTextArea.style.boxShadow = ''; // Laisser la transition CSS reprendre le contrôle
-            }, 300);
+            setTimeout(() => { rawTextArea.style.boxShadow = ''; }, 300);
 
-            // Allow the pasted text to populate the textarea before we read it
             setTimeout(() => {
                 const rawText = rawTextArea.value;
-                if (!rawText.trim()) return;
-
-                handleDataProcessing(rawText);
+                if (rawText.trim()) {
+                    handleDataProcessing(rawText);
+                }
             }, 0);
         });
 
@@ -294,35 +283,32 @@
             try {
                 const parsedResult = parsePortalData(rawText);
                 
-                if (!parsedResult.nom || !parsedResult.etapeData) {
-                    alert("Erreur d'analyse : Le nom ou le numéro d'étape n'a pas été trouvé. Assurez-vous d'avoir bien copié toute la page du portail.");
-                    rawTextArea.value = ''; // Clear the textarea for another attempt
+                if (!parsedResult || !parsedResult.nom || !parsedResult.etapeData) {
+                    alert("Erreur d'analyse : Le nom de l'étudiant ou le numéro d'étape n'a pas pu être trouvé. Assurez-vous d'avoir bien copié toute la page du portail.");
+                    rawTextArea.value = '';
                     return;
                 }
 
-                // Get existing data or create a new object
                 let existingData = JSON.parse(localStorage.getItem('mbsData')) || {};
 
-                // Create user ID if it doesn't exist
                 if (!existingData.user_random) {
                     existingData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
                 }
                 
-                // Overwrite data for the specific etape
                 const updatedData = {
                     ...existingData,
-                    valid: true, // Mark data as valid
+                    valid: true,
                     nom: parsedResult.nom,
                     [parsedResult.etapeKey]: parsedResult.etapeData,
                 };
 
-                // ---- START: HISTORY TRACKING LOGIC (for improve.html) ----
+                // ---- START: HISTORY TRACKING LOGIC ----
                 const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
                 
                 function getNumericGrade(result) {
                     if (!result) return null;
                     const trimmed = result.trim();
-                    if (gradeMap[trimmed]) return gradeMap[trimmed];
+                    if (gradeMap[trimmed.toUpperCase()]) return gradeMap[trimmed.toUpperCase()];
                     const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
                     if (scoreMatch) {
                         const score = parseFloat(scoreMatch[1].replace(',', '.'));
@@ -369,91 +355,62 @@
                 }
                 // ---- END: HISTORY TRACKING LOGIC ----
 
-                // Save the updated data
                 localStorage.setItem('mbsData', JSON.stringify(updatedData));
-                
-                // Redirect to the main dashboard
                 window.location.href = 'main.html';
 
             } catch (error) {
                 console.error("An error occurred during data processing:", error);
-                alert("Une erreur inattendue est survenue. Veuillez réessayer.");
+                alert("Une erreur inattendue est survenue lors de l'analyse des données. L'erreur a été enregistrée dans la console pour le débogage. Veuillez réessayer.");
                 rawTextArea.value = '';
             }
         }
 
-        // --- Data Parsing Function ---
+        /**
+         * Parses the entire text content from the student portal.
+         * This is the main parsing function that orchestrates the process.
+         * @param {string} text - The raw text pasted from the portal.
+         * @returns {object|null} An object with parsed data or null on failure.
+         */
         function parsePortalData(text) {
-            const nameMatch = text.match(/Photo\s*\n(.+)/);
-            const semesterMatch = text.match(/Classe\s*\n\s*(\d)/);
+            // Use more flexible regex to find name and semester number.
+            const nameMatch = text.match(/Photo\s*\n\s*(.+)/);
+            const semesterMatch = text.match(/Classe\s*(\d)/); // Handles number on same line or next.
+            
             const nom = nameMatch ? nameMatch[1].trim() : null;
             const etapeNumber = semesterMatch ? semesterMatch[1].trim() : null;
-            if (!nom || !etapeNumber) return {};
+
+            if (!nom || !etapeNumber) {
+                console.error("Could not find student name or semester number.");
+                return null;
+            }
             const etapeKey = `etape${etapeNumber}`;
 
-            const POND_REGEX = /^\d{1,3}$/;
-            const DATE_REGEX = /^\d{4}-\d{2}-\d{2}/;
-            const RESULT_REGEX = /^(\d{1,3},\d\s\/\s\d{1,3}\s\(.+\)|[A-DF][+-]?)$/;
-
-            const createNewAssignment = () => ({ textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' });
-
-            const parseAssignments = (lines) => {
-                let assignments = [];
-                if (lines.length === 0) return assignments;
-                let currentAssignment = createNewAssignment();
-
-                const finalizeAssignment = () => {
-                    if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond) return;
-                    const buffer = currentAssignment.textBuffer;
-                    if (buffer.length === 1) {
-                        currentAssignment.work = buffer[0];
-                    } else if (buffer.length > 1) {
-                        currentAssignment.category = buffer[0];
-                        currentAssignment.work = buffer.slice(1).join('<br>');
-                    }
-                    delete currentAssignment.textBuffer;
-                    assignments.push(currentAssignment);
-                };
-
-                for (const line of lines) {
-                    const trimmedLine = line.trim();
-                    if (!trimmedLine || trimmedLine.includes('Catégorie\tTravail\tPond.')) continue;
-
-                    if (RESULT_REGEX.test(trimmedLine)) {
-                        currentAssignment.result = trimmedLine;
-                        finalizeAssignment();
-                        currentAssignment = createNewAssignment();
-                    } else if (POND_REGEX.test(trimmedLine)) {
-                        currentAssignment.pond = trimmedLine;
-                    } else if (DATE_REGEX.test(trimmedLine)) {
-                        if (!currentAssignment.assignedDate) {
-                            currentAssignment.assignedDate = trimmedLine.split('à')[0].trim();
-                        }
-                        currentAssignment.dueDate = trimmedLine;
-                    } else {
-                        if (currentAssignment.pond || currentAssignment.assignedDate) {
-                            finalizeAssignment();
-                            currentAssignment = createNewAssignment();
-                        }
-                        currentAssignment.textBuffer.push(trimmedLine);
-                    }
-                }
-                finalizeAssignment();
-                return assignments;
-            };
-            
             const subjects = [];
-            const subjectRegex = /([A-Z]{3}\d{3}[A-Z]?) - (.+)/g;
-            const subjectsText = text.split(subjectRegex).slice(1);
-            
-            for (let i = 0; i < subjectsText.length; i += 3) {
-                const subjectData = { code: subjectsText[i].trim(), name: subjectsText[i+1].trim(), competencies: [] };
-                let subjectContent = subjectsText[i+2] || '';
+            const subjectHeaderRegex = /([A-Z]{3}\d{3}[A-Z]?) - (.+)/g;
+            const subjectMatches = [...text.matchAll(subjectHeaderRegex)];
+
+            if (subjectMatches.length === 0) return { nom, etapeKey, etapeData: [] };
+
+            // **ROBUSTNESS IMPROVEMENT**: Instead of splitting, process content between matches.
+            // This isolates parsing for each subject, preventing a single error from cascading.
+            for (let i = 0; i < subjectMatches.length; i++) {
+                const currentMatch = subjectMatches[i];
+                const nextMatch = subjectMatches[i + 1];
+                
+                const subjectCode = currentMatch[1].trim();
+                const subjectName = currentMatch[2].trim();
+                const startIndex = currentMatch.index + currentMatch[0].length;
+                const endIndex = nextMatch ? nextMatch.index : text.length;
+                
+                const subjectContent = text.substring(startIndex, endIndex);
+
+                const subjectData = { code: subjectCode, name: subjectName, competencies: [] };
+                
                 const competencyBlocks = subjectContent.split('Compétence - ').slice(1);
                 
-                for(const block of competencyBlocks) {
+                for (const block of competencyBlocks) {
                     const blockLines = block.trim().split('\n');
-                    const compName = blockLines.shift();
+                    const compName = blockLines.shift() || '';
                     const competencyData = {
                         name: `Compétence - ${compName.trim()}`,
                         assignments: parseAssignments(blockLines)
@@ -462,11 +419,77 @@
                         subjectData.competencies.push(competencyData);
                     }
                 }
+
                 if (subjectData.competencies.length > 0) {
                     subjects.push(subjectData);
                 }
             }
             return { nom, etapeKey, etapeData: subjects };
+        }
+
+        /**
+         * Parses a list of lines to extract individual assignments.
+         * This function uses a state-machine approach to build assignment objects one line at a time.
+         * @param {string[]} lines - An array of strings representing the assignment section.
+         * @returns {object[]} An array of parsed assignment objects.
+         */
+        function parseAssignments(lines) {
+            // **ROBUSTNESS IMPROVEMENT**: More flexible regexes.
+            const POND_REGEX = /^\d{1,3}$/; // Weight (Pondération)
+            const DATE_REGEX = /\d{4}-\d{2}-\d{2}/; // Matches a date anywhere in the line
+            const RESULT_REGEX = /^(?:(?:\d{1,3}[,.]?\d*)\s*\/\s*(?:\d{1,3}[,.]?\d*)\s*\(.+\)|[a-df][+-]?)$/i; // Grade or score/max
+
+            const createNewAssignment = () => ({ textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' });
+            
+            let assignments = [];
+            if (lines.length === 0) return assignments;
+            
+            let currentAssignment = createNewAssignment();
+
+            const finalizeAssignment = () => {
+                if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond) return;
+                
+                const buffer = currentAssignment.textBuffer.filter(line => line.trim()); // Ignore empty lines in buffer
+                if (buffer.length === 1) {
+                    currentAssignment.work = buffer[0];
+                } else if (buffer.length > 1) {
+                    currentAssignment.category = buffer[0];
+                    currentAssignment.work = buffer.slice(1).join('<br>');
+                }
+                
+                delete currentAssignment.textBuffer; // Clean up the temporary buffer
+                assignments.push(currentAssignment);
+            };
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine || trimmedLine.includes('Catégorie\tTravail\tPond.')) continue;
+
+                if (RESULT_REGEX.test(trimmedLine)) {
+                    currentAssignment.result = trimmedLine;
+                    finalizeAssignment();
+                    currentAssignment = createNewAssignment();
+                } else if (POND_REGEX.test(trimmedLine)) {
+                    currentAssignment.pond = trimmedLine;
+                } else if (DATE_REGEX.test(trimmedLine)) {
+                    // This logic assumes the first date is 'assigned' and the second is 'due'
+                    if (!currentAssignment.assignedDate) {
+                        currentAssignment.assignedDate = trimmedLine.split('à')[0].trim();
+                    }
+                    currentAssignment.dueDate = trimmedLine;
+                } else {
+                    // This is likely part of the assignment's title or category.
+                    // If we find text after already logging a pond/date, it must be a new assignment.
+                    if (currentAssignment.pond || currentAssignment.assignedDate) {
+                        finalizeAssignment();
+                        currentAssignment = createNewAssignment();
+                    }
+                    currentAssignment.textBuffer.push(trimmedLine);
+                }
+            }
+            // Ensure the very last assignment in the list is saved.
+            finalizeAssignment(); 
+            return assignments;
         }
     });
     </script>
