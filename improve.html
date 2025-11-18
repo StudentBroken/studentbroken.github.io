@@ -93,6 +93,106 @@
 
 </head>
 <body>
+
+
+
+<!-- =================== GATEKEEPER BLOCK START =================== -->
+<!-- Paste this entire block directly after your opening <body> tag -->
+
+<style>
+    #gatekeeper-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: white;
+        z-index: 10001; /* Must be the highest value on the page */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        transition: opacity 0.5s ease;
+    }
+    .gatekeeper-content {
+        font-family: 'Playfair Display', serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #2c3e50;
+        font-size: 1.5em;
+    }
+    .gatekeeper-content .icon {
+        font-size: 2em;
+        margin-bottom: 15px;
+        display: inline-block; /* Allows margin to work */
+    }
+    #gatekeeper-overlay.hidden {
+        opacity: 0;
+        pointer-events: none; /* Allows clicks to go through after it's hidden */
+    }
+</style>
+
+<div id="gatekeeper-overlay">
+    <div class="gatekeeper-content">
+        <!-- You need Font Awesome for this icon to appear -->
+        <span class="icon">🔒</span> 
+        <p>Accès Restreint</p>
+    </div>
+</div>
+
+<script>
+    // This self-executing function runs immediately without interfering with other scripts.
+    (function() {
+        'use strict';
+
+        // --- The list of users who are allowed to access the site. ---
+        const APPROVED_USERS = [
+            'Jianheng Ouyang', 
+            'Michael Xu', 
+            'Dan-Vinh Calvarese', 
+            'Anton Cucereavii'
+        ];
+
+        let isAllowed = false;
+
+        try {
+            // Check for 'jdlmData' as requested.
+            const dataString = localStorage.getItem('jdlmData');
+            if (dataString) {
+                const jdlmData = JSON.parse(dataString);
+                if (jdlmData && jdlmData.nom) {
+                    const currentUser = jdlmData.nom.trim();
+                    // Check if the current user's name is in our approved list.
+                    if (APPROVED_USERS.includes(currentUser)) {
+                        isAllowed = true;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Gatekeeper Error: Could not read or parse jdlmData from localStorage.", e);
+            isAllowed = false; // Default to not allowed if data is corrupt.
+        }
+
+        // --- FINAL CHECK ---
+        if (isAllowed) {
+            // If user is approved, fade out and hide the overlay.
+            const overlay = document.getElementById('gatekeeper-overlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+        }
+        // If the user is not allowed, the script does nothing,
+        // and the white overlay remains in place, blocking all content.
+
+    })();
+</script>
+
+<!-- ==================== GATEKEEPER BLOCK END ==================== -->
+
+
+
+
+
+
+    
     <header class="site-header-container">
         <div class="header-left">
             <a href="main.html" class="icon-btn" title="Retour au tableau de bord"><i class="fa-solid fa-arrow-left"></i></a>
