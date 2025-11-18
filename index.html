@@ -167,6 +167,9 @@
 </head>
 <body>
 
+<!-- =================== OPTIMIZED GATEKEEPER BLOCK START =================== -->
+<!-- Paste this entire block directly after your opening <body> tag -->
+
 <style>
     #gatekeeper-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -185,7 +188,7 @@
 <div id="gatekeeper-overlay">
     <div class="gatekeeper-content">
         <span class="icon">🔒</span> 
-        <p id="gatekeeper-message">Vérification...</p>
+        <p id="gatekeeper-message">Vérification de l'accès...</p>
     </div>
 </div>
 
@@ -194,9 +197,8 @@
     (async function() {
         'use strict';
 
-        // --- PASTE YOUR GOOGLE APPS SCRIPT URL HERE ---
         const GATEKEEPER_API_URL = 'https://script.google.com/macros/s/AKfycbwoMsiLC8YeSri92eT37fyZGK0sroKA9ORWtFImQM9h55TmxISFnGZg4WtKBEEwGOkQfg/exec';
-        // ---------------------------------------------
+        const GATEKEEPER_SESSION_KEY = 'gatekeeper_status'; // Our "wristband" key
 
         const overlay = document.getElementById('gatekeeper-overlay');
         const message = document.getElementById('gatekeeper-message');
@@ -205,21 +207,31 @@
             if (overlay) overlay.classList.add('hidden');
         }
 
-        function denyAccess() {
-            if (message) message.textContent = 'Accès Restreint';
-            // Freeze scrolling if access is denied
+        function denyAccess(msg = 'Accès Restreint') {
+            if (message) message.textContent = msg;
             document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
         }
 
+        // --- THIS IS THE NEW, FASTER LOGIC ---
+        // 1. Check for a session "pass" first (the fast path).
+        if (sessionStorage.getItem(GATEKEEPER_SESSION_KEY) === 'granted') {
+            console.log("Gatekeeper: Session pass found. Granting access instantly.");
+            grantAccess();
+            return; // Stop right here, no network call needed.
+        }
+        // --- END OF NEW LOGIC ---
+
+
+        // If no session pass is found, proceed with the full verification.
         if (GATEKEEPER_API_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE')) {
             console.error("Gatekeeper: SCRIPT_URL is not configured.");
-            denyAccess();
+            denyAccess("SCRIPT_URL non configuré.");
             return;
         }
 
         try {
-            // 1. Fetch the approved user list from your Google Sheet.
+            // 2. Fetch the approved user list from your Google Sheet.
             const response = await fetch(GATEKEEPER_API_URL);
             if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
             const data = await response.json();
@@ -227,29 +239,23 @@
 
             const approvedUsers = data.users;
 
-            // 2. Check for the master "FALSE" switch.
+            // 3. Check for the master "FALSE" switch.
             if (approvedUsers.length === 1 && approvedUsers[0].toString().toUpperCase() === 'FALSE') {
                 console.log("Gatekeeper disabled by server. Granting access to all.");
+                sessionStorage.setItem(GATEKEEPER_SESSION_KEY, 'granted'); // Give a pass for this session
                 grantAccess();
                 return;
             }
 
-            // 3. Get the user's name from both jdlmData and mbsData.
+            // 4. Get the user's name from both jdlmData and mbsData.
             let userName = null;
-            try {
-                const jdlmData = JSON.parse(localStorage.getItem('jdlmData'));
-                if (jdlmData && jdlmData.nom) userName = jdlmData.nom.trim();
-            } catch (e) { /* ignore parsing errors */ }
+            try { const jdlmData = JSON.parse(localStorage.getItem('jdlmData')); if (jdlmData && jdlmData.nom) userName = jdlmData.nom.trim(); } catch (e) {}
+            if (!userName) { try { const mbsData = JSON.parse(localStorage.getItem('mbsData')); if (mbsData && mbsData.nom) userName = mbsData.nom.trim(); } catch (e) {} }
 
-            if (!userName) {
-                try {
-                    const mbsData = JSON.parse(localStorage.getItem('mbsData'));
-                    if (mbsData && mbsData.nom) userName = mbsData.nom.trim();
-                } catch (e) { /* ignore parsing errors */ }
-            }
-
-            // 4. Check if the found name is on the approved list.
+            // 5. Check if the found name is on the approved list.
             if (userName && approvedUsers.includes(userName)) {
+                // 5a. SUCCESS! Give the user a "pass" for this session.
+                sessionStorage.setItem(GATEKEEPER_SESSION_KEY, 'granted');
                 grantAccess();
             } else {
                 denyAccess();
@@ -257,10 +263,12 @@
 
         } catch (error) {
             console.error("Gatekeeper Error:", error);
-            denyAccess(); // Deny access if there's any error
+            denyAccess(`Erreur de communication: ${error.message}`);
         }
     })();
 </script>
+
+<!-- ======================================================================= -->
     
     <div class="background-container"></div>
     <div class="background-overlay"></div>
