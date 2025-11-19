@@ -4,25 +4,28 @@
     // ------------------------------------
 
     function triggerGlitchMode() {
-        // 1. Inject CSS for full stretch and low quality look
+        // 1. Inject CSS exactly matching your simulation
         const style = document.createElement('style');
         style.innerHTML = `
-            body { 
-                margin: 0; 
-                padding: 0; 
-                overflow: hidden; 
-                background: white; /* White background as requested */
+            /* Reset Body/HTML to black full screen */
+            body, html { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                width: 100% !important;
+                height: 100% !important;
+                overflow: hidden !important; 
+                background-color: black !important;
             }
             
-            /* The Background GIF (Monkey Tongue) */
+            /* The Background GIF - Forces stretching */
             #brainrot-bg {
                 position: fixed;
                 top: 0;
                 left: 0;
                 width: 100vw;
                 height: 100vh;
-                object-fit: fill; /* Forces the image to stretch and distort */
-                z-index: 9998;
+                object-fit: fill !important; /* This makes it stretch */
+                z-index: 2147483647; /* Max Z-index to stay on top */
                 pointer-events: none;
             }
 
@@ -32,35 +35,36 @@
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                color: red;
-                font-family: Impact, 'Arial Black', sans-serif;
-                font-size: 6vw; /* Responsive huge text */
-                text-align: center;
-                text-transform: uppercase;
-                font-weight: bold;
-                z-index: 9999;
-                /* Black outline to make text readable on white/gif */
-                text-shadow: 
-                    3px 3px 0 #000,
-                    -1px -1px 0 #000,  
-                    1px -1px 0 #000,
-                    -1px 1px 0 #000,
-                    1px 1px 0 #000;
+                color: red !important;
+                font-family: Impact, 'Arial Black', sans-serif !important;
+                font-size: 6vw !important; 
+                text-align: center !important;
+                text-transform: uppercase !important;
+                font-weight: bold !important;
+                z-index: 2147483647;
+                text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
                 width: 100%;
-                line-height: 1.1;
             }
 
-            /* Hide original site content */
-            header, footer, .main-container, .data-widget, .site-header-container { display: none !important; }
+            /* Hide all other site elements immediately */
+            body > *:not(#brainrot-bg):not(#brainrot-caption):not(style) {
+                display: none !important;
+            }
         `;
         document.head.appendChild(style);
 
-        // 2. Nuke the body and inject the GIF + Text
-        // Using direct link to the Monkey Tongue GIF to allow stretching
-        document.body.innerHTML = `
-            <img id="brainrot-bg" src="https://media.tenor.com/m0b2H2t2hQ8AAAAC/tongue-out-hola.gif">
-            <div id="brainrot-caption">I WANT TO BE LIKE THE GREAT RAYANE</div>
-        `;
+        // 2. Inject the specific Monkey GIF and Text
+        const img = document.createElement('img');
+        img.id = 'brainrot-bg';
+        // Using the exact link you provided
+        img.src = "https://media.tenor.com/p_PSprNhLkkAAAAj/monkey-tongue-out.gif";
+        
+        const caption = document.createElement('div');
+        caption.id = 'brainrot-caption';
+        caption.innerText = "Roses are red, Violets are blue, I want to be like the great rayane";
+
+        document.body.appendChild(img);
+        document.body.appendChild(caption);
     }
 
     try {
@@ -75,8 +79,6 @@
 
         // 2. Fetch Blacklist
         const response = await fetch(BLACKLIST_API_URL);
-        
-        // If the server worked, it will return JSON (even if empty)
         if (!response.ok) return; 
 
         const blacklist = await response.json();
