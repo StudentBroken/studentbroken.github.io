@@ -37,7 +37,7 @@
                 transform: translate(-50%, -50%);
                 color: red !important;
                 font-family: Impact, 'Arial Black', sans-serif !important;
-                font-size: 6vw !important; 
+                font-size: 5vw !important; 
                 text-align: center !important;
                 text-transform: uppercase !important;
                 font-weight: bold !important;
@@ -61,7 +61,7 @@
         
         const caption = document.createElement('div');
         caption.id = 'brainrot-caption';
-        caption.innerText = "Roses are red, Violets are blue, Your grades are so good the site won't load";
+        caption.innerText = "Nuh uh";
 
         document.body.appendChild(img);
         document.body.appendChild(caption);
