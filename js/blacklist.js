@@ -24,8 +24,8 @@
                 left: 0;
                 width: 100vw;
                 height: 100vh;
-                object-fit: fill !important; /* This makes it stretch */
-                z-index: 2147483647; /* Max Z-index to stay on top */
+                object-fit: fill !important; 
+                z-index: 2147483647; 
                 pointer-events: none;
             }
 
@@ -56,7 +56,6 @@
         // 2. Inject the specific Monkey GIF and Text
         const img = document.createElement('img');
         img.id = 'brainrot-bg';
-        // Using the exact link you provided
         img.src = "https://media.tenor.com/p_PSprNhLkkAAAAj/monkey-tongue-out.gif";
         
         const caption = document.createElement('div');
@@ -67,8 +66,27 @@
         document.body.appendChild(caption);
     }
 
+    // Helper to lock the permblacklist value in the current session
+    function lockPermBlacklist() {
+        localStorage.setItem('permblacklist', 'true');
+        // This prevents modification via JavaScript in the current session
+        Object.defineProperty(localStorage, 'permblacklist', {
+            value: 'true',
+            writable: false,
+            configurable: false
+        });
+    }
+
     try {
-        // 1. Check Local Storage for User Name
+        // 1. PRIORITY CHECK: Check if the user is already permanently blacklisted
+        // If this flag exists, we block immediately without needing to check the name or API.
+        if (localStorage.getItem('permblacklist') === 'true') {
+            lockPermBlacklist(); // Re-apply the lock
+            triggerGlitchMode();
+            return; // Stop execution
+        }
+
+        // 2. Check Local Storage for User Name
         const mbsDataString = localStorage.getItem('mbsData');
         if (!mbsDataString) return;
 
@@ -77,15 +95,20 @@
 
         const userName = mbsData.nom.trim().toLowerCase();
 
-        // 2. Fetch Blacklist
+        // 3. Fetch Blacklist
         const response = await fetch(BLACKLIST_API_URL);
         if (!response.ok) return; 
 
         const blacklist = await response.json();
 
-        // 3. Check Match
+        // 4. Check Match
         if (blacklist.includes(userName)) {
+            // Clear other data
             localStorage.clear(); 
+            
+            // Set the permanent flag
+            lockPermBlacklist();
+            
             triggerGlitchMode();
         }
 
