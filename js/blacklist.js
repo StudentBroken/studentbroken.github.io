@@ -16,8 +16,8 @@
                 overflow: hidden !important; 
                 background-color: black !important;
             }
-            
-            /* The Background GIF - Forces stretching */
+             
+            /* The Background Image - Forces stretching */
             #brainrot-bg {
                 position: fixed;
                 top: 0;
@@ -53,10 +53,12 @@
         `;
         document.head.appendChild(style);
 
-        // 2. Inject the specific Monkey GIF and Text
+        // 2. Inject the specific Black Image and Text
         const img = document.createElement('img');
         img.id = 'brainrot-bg';
-        img.src = "https://media.tenor.com/p_PSprNhLkkAAAAj/monkey-tongue-out.gif";
+        
+        // --- UPDATED IMAGE URL BELOW ---
+        img.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Black_colour.jpg/500px-Black_colour.jpg";
         
         const caption = document.createElement('div');
         caption.id = 'brainrot-caption';
@@ -79,11 +81,10 @@
 
     try {
         // 1. PRIORITY CHECK: Check if the user is already permanently blacklisted
-        // If this flag exists, we block immediately without needing to check the name or API.
         if (localStorage.getItem('permblacklist') === 'true') {
-            lockPermBlacklist(); // Re-apply the lock
+            lockPermBlacklist(); 
             triggerGlitchMode();
-            return; // Stop execution
+            return; 
         }
 
         // 2. Check Local Storage for User Name
