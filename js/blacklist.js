@@ -60,7 +60,7 @@
         
         const caption = document.createElement('div');
         caption.id = 'brainrot-caption';
-        caption.innerText = "no website for you";
+        caption.innerText = " ";
 
         document.body.appendChild(img);
         document.body.appendChild(caption);
