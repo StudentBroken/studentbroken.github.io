@@ -2,7 +2,7 @@
 
 (async function() {
     // --- PASTE YOUR NEW DEPLOYED URL HERE ---
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyNhGaZvsiar-kHmk8Hg0wFpPYo42KJCZ25SspufcS8IeroeyNUs_fQfJviqL7AQQBShA/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbx1zib3LDFjnBZzcOkxHRpXk_8nPD2ZeSGaL7jWtb71Xcfjl_N_GyOCg_NCP3y3p8KC6g/exec'; 
     // ----------------------------------------
 
     const KEYS = {
