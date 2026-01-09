@@ -295,5 +295,7 @@
         function getNumericGrade(result) { if (!result) return null; const gradeMap = {'A+':100,'A':95,'A-':90,'B+':85,'B':80,'B-':75,'C+':70,'C':65,'C-':60,'D+':55,'D':50,'E':45}; const trimmed = result.trim(); if(gradeMap[trimmed]) return gradeMap[trimmed]; const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/); if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.')); const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/); if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const max = parseFloat(scoreMatch[2].replace(',', '.')); return (max > 0) ? (score / max) * 100 : null; } const plainNumber = parseFloat(trimmed); if(!isNaN(plainNumber) && plainNumber >=0 && plainNumber <= 110) return plainNumber; return null; }
     
     </script>
+        <script src="js/trusted.js"></script>
+
 </body>
 </html>
