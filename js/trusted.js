@@ -1,27 +1,22 @@
 --- START OF FILE blacklist.js ---
 
 (async function() {
-    // --- PASTE YOUR NEW DEPLOYED URL HERE ---
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyD9bYuYdXQkZS4MQ98rUPVgY_1TqRB4QVcQPSIPoszKUxDRBG8QIrIgASl9y9EziVddg/exec'; 
-    // ----------------------------------------
+    // --- PASTE NEW DEPLOYED URL HERE ---
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzbdDDE35laEjCj18frEtSaw0OP9bi6sQGU8HfABVnmbZ6CLWKQ3ixbTM00CmE26KQf5g/exec'; 
+    // -----------------------------------
 
     const KEYS = {
-        PERM_BAN: 'blacklist_perm_ban',
-        TRUSTED_USER: 'blacklist_trusted_user_name', // Stores the NAME, not just true/false
-        FAILURES: 'blacklist_fail_count'
+        PERM_BAN: 'blacklist_browser_banned', // LocalStorage (Hard Ban)
+        VIP_PASS: 'blacklist_vip_pass',       // LocalStorage (Row A - Perm)
+        SESSION_PASS: 'blacklist_session_pass', // SessionStorage (Row B - Temp)
+        FAILURES: 'blacklist_fail_count'      // LocalStorage (Track fails)
     };
     
     const MAX_ATTEMPTS = 5;
 
-    // --- UTILS ---
-    function log(msg) {
-        console.log(`%c[Security System] ${msg}`, 'color: yellow; background: black; font-weight: bold; padding: 2px;');
-    }
-
     // --- VISUALS ---
     function nukeWebsite() {
         if (document.getElementById('brainrot-style')) return;
-        
         const style = document.createElement('style');
         style.id = 'brainrot-style';
         style.innerHTML = `
@@ -31,166 +26,168 @@
             body > *:not(#brainrot-bg):not(#brainrot-caption):not(#brainrot-style) { display: none !important; }
         `;
         document.head.appendChild(style);
-
         const img = document.createElement('img');
         img.id = 'brainrot-bg';
         img.src = "https://media.tenor.com/p_PSprNhLkkAAAAj/monkey-tongue-out.gif";
-        
         const caption = document.createElement('div');
         caption.id = 'brainrot-caption';
         caption.innerText = "Nuh uh - Restricted Access";
-
         document.body.appendChild(img);
         document.body.appendChild(caption);
     }
 
     function triggerPermBan() {
-        log("PERMANENT BAN ACTIVATED.");
-        localStorage.clear();
+        console.log("Applying Permanent Browser Ban");
+        localStorage.clear(); // Wipe their data
+        sessionStorage.clear(); 
+        
+        // This is the "Burn the Browser" flag. 
+        // It stays even if they change their MBS/JDLM name.
         localStorage.setItem(KEYS.PERM_BAN, 'true');
         
         document.body.innerHTML = ''; 
         const style = document.createElement('style');
         style.innerHTML = `body, html { margin:0; padding:0; background: black; height: 100%; overflow: hidden; }`;
         document.head.appendChild(style);
-
         const img = document.createElement('img');
         img.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Black_colour.jpg/500px-Black_colour.jpg";
-        img.style.width = "100vw"; 
-        img.style.height = "100vh";
-        img.style.objectFit = "cover";
+        img.style.width = "100vw"; img.style.height = "100vh"; img.style.objectFit = "cover";
         document.body.appendChild(img);
     }
 
     function restoreWebsite() {
-        log("Access Granted. Restoring site.");
         const bg = document.getElementById('brainrot-bg');
         const cap = document.getElementById('brainrot-caption');
         const style = document.getElementById('brainrot-style');
         if (bg) bg.remove();
         if (cap) cap.remove();
         if (style) style.remove();
-        
         const hidden = document.querySelectorAll('body > *');
         hidden.forEach(el => el.style.removeProperty('display'));
     }
 
-    // --- MAIN CHECK ---
-    async function checkSecurity() {
-        // 1. Check Perm Ban
+    async function updateBackend(action, name) {
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: action, name: name })
+            });
+        } catch (e) { console.error("Sync Error:", e); }
+    }
+
+    // --- LOGIC ---
+    async function runSecurity() {
+        // 1. CHECK HARD BAN (Browser Level)
+        // This happens before we even check their username.
         if (localStorage.getItem(KEYS.PERM_BAN) === 'true') {
             triggerPermBan();
             return;
         }
 
-        // 2. Identify User
+        // 2. CHECK ROW A VIP (Local Storage - Permanent)
+        if (localStorage.getItem(KEYS.VIP_PASS) === 'true') {
+            console.log("VIP (Row A) detected. Skipping checks.");
+            return; 
+        }
+
+        // 3. CHECK ROW B SESSION (Session Storage - Temp)
+        if (sessionStorage.getItem(KEYS.SESSION_PASS) === 'true') {
+            console.log("Semi-Trusted (Row B) session active. Skipping checks.");
+            return;
+        }
+
+        // 4. IDENTIFY USER
         let userName = null;
         try {
             const mbs = JSON.parse(localStorage.getItem('mbsData'));
             if (mbs && mbs.nom) userName = mbs.nom.trim().toLowerCase();
         } catch (e) {}
-
         if (!userName) {
             try {
                 const jdlm = JSON.parse(localStorage.getItem('jdlmData'));
                 if (jdlm && jdlm.nom) userName = jdlm.nom.trim().toLowerCase();
             } catch (e) {}
         }
+        
+        if (!userName) return; // Unknown user (guest?) - or handle as you wish
 
-        if (!userName) {
-            log("No 'nom' found in mbsData or jdlmData. Script standing by (or user not logged in).");
-            // If you want to FORCE a check even without a name, remove this return, 
-            // but usually we wait for a name.
-            return; 
-        }
-
-        log(`Identified User: ${userName}`);
-
-        // 3. Check Local Trust (FIXED: Checks if THIS specific user is trusted)
-        const trustedUser = localStorage.getItem(KEYS.TRUSTED_USER);
-        if (trustedUser === userName) {
-            log("User is locally verified as trusted. Skipping server check.");
-            return; 
-        } else if (trustedUser) {
-            log("Local trust found for different user. Clearing and re-verifying.");
-            localStorage.removeItem(KEYS.TRUSTED_USER);
-        }
-
-        // 4. Server Check
-        log("Fetching security data...");
+        // 5. FETCH DATA (Only if not locally trusted)
         let data;
         try {
             const res = await fetch(API_URL);
-            if (!res.ok) throw new Error("API Network Error");
             data = await res.json();
-            log("Data received.");
         } catch (e) {
-            console.error(e);
-            // If server is down, what do? For now, we return to avoid locking out everyone.
-            // Or trigger nuke if you want fail-secure.
-            return; 
-        }
-
-        // Default to empty arrays if undefined
-        const trusted = data.trusted || [];
-        const secondary = data.secondary || [];
-        const nono = data.nono || [];
-        const password = data.password;
-
-        // 5. Whitelist Check
-        if (trusted.includes(userName) || secondary.includes(userName)) {
-            log("User is on Whitelist. Granting access.");
-            localStorage.setItem(KEYS.TRUSTED_USER, userName);
+            console.error("Connection failed");
+            nukeWebsite(); // Fail Secure
             return;
         }
 
-        // 6. Access Denied Logic
-        log("User NOT on whitelist. Initiating Lockdown.");
+        const { vip, semiTrusted, banned, password } = data;
+
+        // 6. CHECK ROW C (BAN)
+        if (banned.includes(userName)) {
+            triggerPermBan(); // Sets KEYS.PERM_BAN
+            return;
+        }
+
+        // 7. CHECK ROW A (VIP)
+        if (vip.includes(userName)) {
+            console.log("User is VIP (Row A). Setting permanent pass.");
+            localStorage.setItem(KEYS.VIP_PASS, 'true');
+            return;
+        }
+
+        // 8. CHECK ROW B (SEMI-TRUSTED)
+        if (semiTrusted.includes(userName)) {
+            console.log("User is Semi-Trusted (Row B). Setting session pass.");
+            // Only Session Storage!
+            sessionStorage.setItem(KEYS.SESSION_PASS, 'true');
+            return;
+        }
+
+        // 9. UNKNOWN USER -> CHALLENGE
         nukeWebsite();
-
-        // 7. Password / NoNo Logic
-        let currentFailures = parseInt(localStorage.getItem(KEYS.FAILURES) || '0');
         
-        // Wait 100ms for UI update
-        await new Promise(r => setTimeout(r, 100));
-
-        // If on No-No list, we might want to be stricter, but logic is same: password saves you.
-        // Unless you want No-No list to be INSTANT ban? (Current logic: Password still works)
+        let currentFailures = parseInt(localStorage.getItem(KEYS.FAILURES) || '0');
+        await new Promise(r => setTimeout(r, 200));
 
         while (currentFailures < MAX_ATTEMPTS) {
-            const attempt = prompt(`⚠ SECURITY ALERT ⚠\nUser: ${userName}\nYou are not authorized.\nEnter Password to unlock.\nAttempts left: ${MAX_ATTEMPTS - currentFailures}`);
+            const attempt = prompt(`Security Verification.\nUser: ${userName}\nEnter Password.\nAttempts: ${MAX_ATTEMPTS - currentFailures}`);
 
             if (attempt === password) {
                 // SUCCESS
-                log("Password Correct.");
                 restoreWebsite();
-                localStorage.setItem(KEYS.TRUSTED_USER, userName);
                 localStorage.removeItem(KEYS.FAILURES);
-
-                // Add to Secondary List (Backend)
-                fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Standard for GAS simple POSTs
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ action: 'add_secondary', name: userName })
-                }).catch(e => console.error("Backend update failed", e));
                 
+                // Add to Row B (Sheet)
+                updateBackend('trust', userName);
+                
+                // Grant Session Pass (Row B status)
+                sessionStorage.setItem(KEYS.SESSION_PASS, 'true');
                 return;
             } else {
-                // FAIL
+                // FAILURE
                 currentFailures++;
                 localStorage.setItem(KEYS.FAILURES, currentFailures);
+                
                 if (currentFailures >= MAX_ATTEMPTS) {
+                    // FAILED TOO MANY TIMES
+                    // Add to Row C (Sheet)
+                    updateBackend('ban', userName);
+                    // Burn Browser (Local Storage)
                     triggerPermBan();
                     return;
                 }
-                alert("INCORRECT PASSWORD.");
+                alert("Incorrect Password.");
             }
         }
         
-        // If loop finishes (failures reached max)
+        // Loop exit (fails)
+        updateBackend('ban', userName);
         triggerPermBan();
     }
 
-    checkSecurity();
+    runSecurity();
 })();
