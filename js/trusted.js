@@ -1,28 +1,19 @@
 --- START OF FILE blacklist.js ---
 
 (async function() {
-    // --- PASTE NEW DEPLOYED URL HERE ---
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzbdDDE35laEjCj18frEtSaw0OP9bi6sQGU8HfABVnmbZ6CLWKQ3ixbTM00CmE26KQf5g/exec'; 
-    // -----------------------------------
+    // --- PASTE YOUR NEW DEPLOYED URL HERE ---
+    const API_URL = 'https://script.google.com/macros/s/AKfycbx1zib3LDFjnBZzcOkxHRpXk_8nPD2ZeSGaL7jWtb71Xcfjl_N_GyOCg_NCP3y3p8KC6g/exec'; 
+    // ----------------------------------------
 
-    const KEYS = {
-        PERM_BAN: 'blacklist_browser_banned', // LocalStorage (Hard Ban)
-        VIP_PASS: 'blacklist_vip_pass',       // LocalStorage (Row A - Perm)
-        SESSION_PASS: 'blacklist_session_pass', // SessionStorage (Row B - Temp)
-        FAILURES: 'blacklist_fail_count'      // LocalStorage (Track fails)
-    };
-    
-    const MAX_ATTEMPTS = 5;
-
-    // --- VISUALS ---
-    function nukeWebsite() {
-        if (document.getElementById('brainrot-style')) return;
+    // --- 1. DEFINE VISUALS (NUKE & RESTORE) ---
+    function triggerGlitchMode() {
+        if (document.getElementById('brainrot-bg')) return; 
         const style = document.createElement('style');
         style.id = 'brainrot-style';
         style.innerHTML = `
-            body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: black !important; }
-            #brainrot-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill; z-index: 2147483647; pointer-events: none; }
-            #brainrot-caption { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-family: Impact, sans-serif; font-size: 5vw; z-index: 2147483647; text-align: center; text-transform: uppercase; text-shadow: 2px 2px 0 #000; }
+            body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; overflow: hidden !important; background-color: black !important; }
+            #brainrot-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill !important; z-index: 2147483647; pointer-events: none; }
+            #brainrot-caption { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red !important; font-family: Impact, sans-serif !important; font-size: 5vw !important; text-align: center !important; text-transform: uppercase !important; font-weight: bold !important; z-index: 2147483647; text-shadow: 3px 3px 0 #000; width: 100%; }
             body > *:not(#brainrot-bg):not(#brainrot-caption):not(#brainrot-style) { display: none !important; }
         `;
         document.head.appendChild(style);
@@ -31,20 +22,16 @@
         img.src = "https://media.tenor.com/p_PSprNhLkkAAAAj/monkey-tongue-out.gif";
         const caption = document.createElement('div');
         caption.id = 'brainrot-caption';
-        caption.innerText = "Nuh uh - Restricted Access";
+        caption.innerText = "Nuh uh - Verification Required";
         document.body.appendChild(img);
         document.body.appendChild(caption);
     }
 
-    function triggerPermBan() {
-        console.log("Applying Permanent Browser Ban");
-        localStorage.clear(); // Wipe their data
-        sessionStorage.clear(); 
-        
-        // This is the "Burn the Browser" flag. 
-        // It stays even if they change their MBS/JDLM name.
-        localStorage.setItem(KEYS.PERM_BAN, 'true');
-        
+    function triggerBlackScreen() {
+        localStorage.clear(); 
+        sessionStorage.clear();
+        localStorage.setItem('permBan', 'true'); // Flag for next time
+
         document.body.innerHTML = ''; 
         const style = document.createElement('style');
         style.innerHTML = `body, html { margin:0; padding:0; background: black; height: 100%; overflow: hidden; }`;
@@ -53,9 +40,10 @@
         img.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Black_colour.jpg/500px-Black_colour.jpg";
         img.style.width = "100vw"; img.style.height = "100vh"; img.style.objectFit = "cover";
         document.body.appendChild(img);
+        throw new Error("Banned"); // Stop script
     }
 
-    function restoreWebsite() {
+    function restoreSite() {
         const bg = document.getElementById('brainrot-bg');
         const cap = document.getElementById('brainrot-caption');
         const style = document.getElementById('brainrot-style');
@@ -66,128 +54,134 @@
         hidden.forEach(el => el.style.removeProperty('display'));
     }
 
-    async function updateBackend(action, name) {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: action, name: name })
-            });
-        } catch (e) { console.error("Sync Error:", e); }
+    // --- 2. IMMEDIATE CHECKS (LOCAL MEMORY) ---
+    
+    // A. Check for Permanent Ban (Browser Level)
+    if (localStorage.getItem('permBan') === 'true') {
+        triggerBlackScreen();
     }
 
-    // --- LOGIC ---
-    async function runSecurity() {
-        // 1. CHECK HARD BAN (Browser Level)
-        // This happens before we even check their username.
-        if (localStorage.getItem(KEYS.PERM_BAN) === 'true') {
-            triggerPermBan();
-            return;
-        }
+    // B. Check for VIP Pass (Row A - Permanent)
+    if (localStorage.getItem('vipPass') === 'true') {
+        return; // Exit script, user is good forever
+    }
 
-        // 2. CHECK ROW A VIP (Local Storage - Permanent)
-        if (localStorage.getItem(KEYS.VIP_PASS) === 'true') {
-            console.log("VIP (Row A) detected. Skipping checks.");
-            return; 
-        }
+    // C. Check for Session Pass (Row B - Temporary)
+    if (sessionStorage.getItem('sessionPass') === 'true') {
+        return; // Exit script, user is good for this tab
+    }
 
-        // 3. CHECK ROW B SESSION (Session Storage - Temp)
-        if (sessionStorage.getItem(KEYS.SESSION_PASS) === 'true') {
-            console.log("Semi-Trusted (Row B) session active. Skipping checks.");
-            return;
-        }
-
-        // 4. IDENTIFY USER
-        let userName = null;
+    // --- 3. GET USER NAME ---
+    let userName = null;
+    try {
+        const mbsData = JSON.parse(localStorage.getItem('mbsData'));
+        if (mbsData && mbsData.nom) userName = mbsData.nom.trim().toLowerCase();
+    } catch (e) {}
+    
+    if (!userName) {
         try {
-            const mbs = JSON.parse(localStorage.getItem('mbsData'));
-            if (mbs && mbs.nom) userName = mbs.nom.trim().toLowerCase();
+            const jdlmData = JSON.parse(localStorage.getItem('jdlmData'));
+            if (jdlmData && jdlmData.nom) userName = jdlmData.nom.trim().toLowerCase();
         } catch (e) {}
-        if (!userName) {
-            try {
-                const jdlm = JSON.parse(localStorage.getItem('jdlmData'));
-                if (jdlm && jdlm.nom) userName = jdlm.nom.trim().toLowerCase();
-            } catch (e) {}
-        }
-        
-        if (!userName) return; // Unknown user (guest?) - or handle as you wish
-
-        // 5. FETCH DATA (Only if not locally trusted)
-        let data;
-        try {
-            const res = await fetch(API_URL);
-            data = await res.json();
-        } catch (e) {
-            console.error("Connection failed");
-            nukeWebsite(); // Fail Secure
-            return;
-        }
-
-        const { vip, semiTrusted, banned, password } = data;
-
-        // 6. CHECK ROW C (BAN)
-        if (banned.includes(userName)) {
-            triggerPermBan(); // Sets KEYS.PERM_BAN
-            return;
-        }
-
-        // 7. CHECK ROW A (VIP)
-        if (vip.includes(userName)) {
-            console.log("User is VIP (Row A). Setting permanent pass.");
-            localStorage.setItem(KEYS.VIP_PASS, 'true');
-            return;
-        }
-
-        // 8. CHECK ROW B (SEMI-TRUSTED)
-        if (semiTrusted.includes(userName)) {
-            console.log("User is Semi-Trusted (Row B). Setting session pass.");
-            // Only Session Storage!
-            sessionStorage.setItem(KEYS.SESSION_PASS, 'true');
-            return;
-        }
-
-        // 9. UNKNOWN USER -> CHALLENGE
-        nukeWebsite();
-        
-        let currentFailures = parseInt(localStorage.getItem(KEYS.FAILURES) || '0');
-        await new Promise(r => setTimeout(r, 200));
-
-        while (currentFailures < MAX_ATTEMPTS) {
-            const attempt = prompt(`Security Verification.\nUser: ${userName}\nEnter Password.\nAttempts: ${MAX_ATTEMPTS - currentFailures}`);
-
-            if (attempt === password) {
-                // SUCCESS
-                restoreWebsite();
-                localStorage.removeItem(KEYS.FAILURES);
-                
-                // Add to Row B (Sheet)
-                updateBackend('trust', userName);
-                
-                // Grant Session Pass (Row B status)
-                sessionStorage.setItem(KEYS.SESSION_PASS, 'true');
-                return;
-            } else {
-                // FAILURE
-                currentFailures++;
-                localStorage.setItem(KEYS.FAILURES, currentFailures);
-                
-                if (currentFailures >= MAX_ATTEMPTS) {
-                    // FAILED TOO MANY TIMES
-                    // Add to Row C (Sheet)
-                    updateBackend('ban', userName);
-                    // Burn Browser (Local Storage)
-                    triggerPermBan();
-                    return;
-                }
-                alert("Incorrect Password.");
-            }
-        }
-        
-        // Loop exit (fails)
-        updateBackend('ban', userName);
-        triggerPermBan();
     }
 
-    runSecurity();
+    // If no name, we do nothing (or you can nuke here if you want login mandated)
+    if (!userName) return; 
+
+    // --- 4. FETCH DATA FROM GOOGLE SHEETS ---
+    let data;
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) return; // If server error, let them be?
+        data = await response.json();
+    } catch (e) {
+        console.log("Offline or Error");
+        return;
+    }
+
+    const rowA = data.rowA || []; // VIP
+    const rowB = data.rowB || []; // Trusted
+    const rowC = data.rowC || []; // Banned
+    const password = data.password;
+
+    // --- 5. LOGIC TREE ---
+
+    // CHECK 1: Is he in Row C? (Banned) -> NUKE
+    if (rowC.includes(userName)) {
+        triggerBlackScreen();
+    }
+
+    // CHECK 2: Is he in Row A? (VIP) -> SAVE PASS & EXIT
+    if (rowA.includes(userName)) {
+        localStorage.setItem('vipPass', 'true');
+        return;
+    }
+
+    // CHECK 3: Is he in Row B? (Trusted) -> SAVE SESSION & EXIT
+    if (rowB.includes(userName)) {
+        sessionStorage.setItem('sessionPass', 'true');
+        return;
+    }
+
+    // --- 6. UNKNOWN USER -> CHALLENGE ---
+    triggerGlitchMode();
+
+    let fails = parseInt(localStorage.getItem('fails') || '0');
+    if (fails >= 5) {
+        // Failed too many times in previous loads
+        triggerBlackScreen();
+    }
+
+    // Delay for GIF load
+    await new Promise(r => setTimeout(r, 200)); 
+
+    let success = false;
+    for (let i = fails; i < 5; i++) {
+        const input = prompt(`Security Check\nUser: ${userName}\nEnter Password (Attempt ${i+1}/5)`);
+        
+        if (input === password) {
+            success = true;
+            break;
+        } else {
+            fails++;
+            localStorage.setItem('fails', fails);
+            alert("Wrong Password");
+        }
+    }
+
+    // --- 7. RESULTS ---
+
+    if (success) {
+        // A. Reset Fails
+        localStorage.removeItem('fails');
+        
+        // B. Give Session Pass
+        sessionStorage.setItem('sessionPass', 'true');
+        
+        // C. Restore Site
+        restoreSite();
+
+        // D. Write to Backend (Row B)
+        fetch(API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {'Content-Type': 'text/plain'},
+            body: JSON.stringify({ name: userName, type: 'trust' })
+        });
+
+    } else {
+        // Failed 5 times
+        
+        // A. Write to Backend (Row C)
+        fetch(API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {'Content-Type': 'text/plain'},
+            body: JSON.stringify({ name: userName, type: 'ban' })
+        });
+
+        // B. Ban Browser
+        triggerBlackScreen();
+    }
+
 })();
