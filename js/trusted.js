@@ -20,7 +20,7 @@
 
         const img = document.createElement('img');
         img.id = 'brainrot-bg';
-        img.src = "https://media.tenor.com/p_PSprNhLkkAAAAj/monkey-tongue-out.gif"; // Monkey
+        img.src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRgFGfSwMON8OjFNAGE56nmVTpoGxXB-hf75Q&s"; // Monkey
         
         const caption = document.createElement('div');
         caption.id = 'brainrot-caption';
