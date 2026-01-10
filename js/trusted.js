@@ -1,43 +1,63 @@
 (async function() {
-    // --- PASTE YOUR NEW DEPLOYED URL HERE ---
+    // --- PASTE YOUR DEPLOYED URL HERE ---
     const API_URL = 'https://script.google.com/macros/s/AKfycbz0nC6F3F5UHvLLGC1MxlB9RgfyHEGQ1wXCCc75FE3wBjBkLYZ7Ek3VLGJu2czidkpksQ/exec'; 
-    // ----------------------------------------
+    // ------------------------------------
 
-    // --- VISUALS ---
+    // --- 1. FINGERPRINTING & BAN MANAGEMENT ---
+    
+    function setBanStatus() {
+        // 1. Local Storage
+        localStorage.setItem('perm_banned_user', 'true');
+        Object.defineProperty(localStorage, 'perm_banned_user', { value: 'true', writable: false });
+        
+        // 2. Session Storage
+        sessionStorage.setItem('perm_banned_user', 'true');
+        
+        // 3. Cookies (Harder to clear via simple cache clear)
+        const d = new Date();
+        d.setTime(d.getTime() + (365*24*60*60*1000)); // 1 year
+        document.cookie = "perm_banned_user=true; expires=" + d.toUTCString() + "; path=/";
+    }
 
-    // 1. The Monkey (For Password Prompt)
+    function isDeviceBanned() {
+        // Check all storage methods
+        if (localStorage.getItem('perm_banned_user') === 'true') return true;
+        if (sessionStorage.getItem('perm_banned_user') === 'true') return true;
+        if (document.cookie.indexOf('perm_banned_user=true') > -1) {
+            // If found in cookie but not local, re-apply local
+            setBanStatus();
+            return true;
+        }
+        return false;
+    }
+
+    // --- 2. VISUALS ---
+
+    // The Monkey Background (Nuke)
     function triggerNuhUh() {
         if (document.getElementById('brainrot-bg')) return;
+        
         const style = document.createElement('style');
         style.id = 'brainrot-style';
         style.innerHTML = `
             body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; overflow: hidden !important; background-color: black !important; }
-            #brainrot-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill !important; z-index: 2147483647; pointer-events: none; }
-            #brainrot-caption { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red !important; font-family: Impact, sans-serif !important; font-size: 5vw !important; text-align: center !important; text-transform: uppercase !important; font-weight: bold !important; z-index: 2147483647; text-shadow: 3px 3px 0 #000; width: 100%; }
-            body > *:not(#brainrot-bg):not(#brainrot-caption):not(#brainrot-style) { display: none !important; }
+            #brainrot-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill !important; z-index: 2147483646; pointer-events: none; }
+            /* Hide everything else */
+            body > *:not(#brainrot-bg):not(#brainrot-style):not(#custom-lock-container) { display: none !important; }
         `;
         document.head.appendChild(style);
 
         const img = document.createElement('img');
         img.id = 'brainrot-bg';
-        img.src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRgFGfSwMON8OjFNAGE56nmVTpoGxXB-hf75Q&s"; // Monkey
-        
-        const caption = document.createElement('div');
-        caption.id = 'brainrot-caption';
-        caption.innerText = " ";
-
+        img.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Black_colour.jpg/500px-Black_colour.jpg";
         document.body.appendChild(img);
-        document.body.appendChild(caption);
     }
 
-    // 2. The Black Screen (For Perm Ban)
+    // The Black Screen (Perm Ban)
     function triggerPermBan() {
-        // Lock the browser storage so they can't delete it easily
-        localStorage.setItem('perm_banned_user', 'true');
-        Object.defineProperty(localStorage, 'perm_banned_user', { value: 'true', writable: false });
-        sessionStorage.clear();
-
-        document.body.innerHTML = ''; // Wipe DOM
+        setBanStatus(); // Apply to all storage types
+        
+        document.body.innerHTML = ''; 
         const style = document.createElement('style');
         style.innerHTML = `body, html { margin:0; padding:0; background: black; height: 100%; overflow: hidden; }`;
         document.head.appendChild(style);
@@ -47,140 +67,168 @@
         img.style.width = "100vw"; img.style.height = "100vh"; img.style.objectFit = "cover";
         document.body.appendChild(img);
         
-        throw new Error("Banned"); // Stop execution
+        throw new Error("Banned");
     }
 
     function restoreSite() {
-        const bg = document.getElementById('brainrot-bg');
-        const cap = document.getElementById('brainrot-caption');
-        const style = document.getElementById('brainrot-style');
-        if (bg) bg.remove();
-        if (cap) cap.remove();
-        if (style) style.remove();
+        const elements = ['brainrot-bg', 'brainrot-style', 'custom-lock-container'];
+        elements.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.remove();
+        });
         const hidden = document.querySelectorAll('body > *');
         hidden.forEach(el => el.style.removeProperty('display'));
     }
 
-    // --- LOGIC ---
+    // Custom Password Overlay
+    function promptPasswordCustom(correctPassword, startFails) {
+        return new Promise((resolve, reject) => {
+            // Create Container
+            const container = document.createElement('div');
+            container.id = 'custom-lock-container';
+            container.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: rgba(10, 10, 10, 0.95); border: 2px solid red; 
+                box-shadow: 0 0 20px red; color: red; padding: 30px; 
+                z-index: 2147483647; font-family: 'Courier New', monospace; 
+                text-align: center; width: 320px; border-radius: 10px;
+            `;
+
+            // Inner HTML
+            container.innerHTML = `
+                <h2 style="margin: 0 0 20px 0; text-transform: uppercase; font-size: 24px;">System Locked</h2>
+                <input type="password" id="lock-input" style="
+                    width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box;
+                    background: #222; border: 1px solid #555; color: white; text-align: center; font-size: 18px;
+                " placeholder="Enter Password" autofocus>
+                
+                <div id="lock-status" style="height: 20px; font-size: 12px; color: yellow; margin-bottom: 15px;"></div>
+                
+                <button id="lock-btn" style="
+                    background: red; color: white; border: none; padding: 10px 20px; margin-bottom: 10px;
+                    cursor: pointer; font-weight: bold; text-transform: uppercase; width: 100%; box-sizing: border-box;
+                ">Unlock</button>
+
+                <button id="request-btn" style="
+                    background: transparent; color: #888; border: 1px solid #555; padding: 5px 10px; 
+                    cursor: pointer; font-size: 12px; width: 100%; box-sizing: border-box;
+                ">Request Access</button>
+            `;
+
+            document.body.appendChild(container);
+
+            const input = document.getElementById('lock-input');
+            const unlockBtn = document.getElementById('lock-btn');
+            const requestBtn = document.getElementById('request-btn');
+            const status = document.getElementById('lock-status');
+            let fails = startFails;
+
+            const checkPass = () => {
+                const val = input.value;
+                if (val === correctPassword) {
+                    resolve(true); // Success
+                } else {
+                    fails++;
+                    localStorage.setItem('fail_count', fails);
+                    input.value = '';
+                    
+                    if (fails >= 5) {
+                        reject(fails); // Fail Max
+                    } else {
+                        status.innerText = `ACCESS DENIED. Attempts: ${5 - fails}`;
+                        status.style.color = 'red';
+                    }
+                }
+            };
+
+            // Event Listeners
+            unlockBtn.onclick = checkPass;
+            requestBtn.onclick = () => { window.location.href = 'ticket.html'; };
+            input.onkeydown = (e) => { if (e.key === 'Enter') checkPass(); };
+            
+            // Initial Status
+            status.innerText = `Attempts remaining: ${5 - fails}`;
+        });
+    }
+
+    // --- MAIN LOGIC ---
 
     try {
-        // 1. PRIORITY CHECK: Is browser already burned?
-        if (localStorage.getItem('perm_banned_user') === 'true') {
-            triggerPermBan();
-        }
+        // 1. FAST CHECKS (Device Fingerprint & Cache)
+        if (isDeviceBanned()) triggerPermBan();
+        if (localStorage.getItem('vip_safe_user') === 'true') return;
+        if (sessionStorage.getItem('temp_safe_user') === 'true') return;
 
-        // 2. VIP CHECK: Is user permanently safe? (Row A)
-        if (localStorage.getItem('vip_safe_user') === 'true') {
-            return; // Exit script, allow access
-        }
-
-        // 3. SESSION CHECK: Is user safe for this tab? (Row B)
-        if (sessionStorage.getItem('temp_safe_user') === 'true') {
-            return; // Exit script, allow access
-        }
-
-        // 4. GET USER NAME
+        // 2. GET NAME
         let userName = null;
-        const mbsDataString = localStorage.getItem('mbsData');
-        if (mbsDataString) {
-            const mbsData = JSON.parse(mbsDataString);
-            if (mbsData.nom) userName = mbsData.nom.trim().toLowerCase();
-        }
+        try {
+            const mbs = JSON.parse(localStorage.getItem('mbsData'));
+            if (mbs && mbs.nom) userName = mbs.nom.trim().toLowerCase();
+        } catch(e){}
         
         if (!userName) {
-            // Also check JDLM
-            const jdlmDataString = localStorage.getItem('jdlmData');
-            if (jdlmDataString) {
-                const jdlmData = JSON.parse(jdlmDataString);
-                if (jdlmData.nom) userName = jdlmData.nom.trim().toLowerCase();
-            }
+             try {
+                const jdlm = JSON.parse(localStorage.getItem('jdlmData'));
+                if (jdlm && jdlm.nom) userName = jdlm.nom.trim().toLowerCase();
+            } catch(e){}
         }
 
-        // If no name found, we skip logic (or you can nuke here if you want strict mode)
-        if (!userName) return; 
+        if (!userName) return; // Exit if no user logged in
 
-        // 5. FETCH DATA
+        // 3. FETCH
         const response = await fetch(API_URL);
         if (!response.ok) return; 
         const data = await response.json();
 
-        const rowA = data.vip || [];
-        const rowB = data.trusted || [];
-        const rowC = data.banned || [];
-        const password = data.password;
-
-        // 6. CHECK LISTS
+        // 4. LIST CHECK
+        if (data.banned && data.banned.includes(userName)) triggerPermBan();
         
-        // A. Is he in Row C? (Banned)
-        if (rowC.includes(userName)) {
-            triggerPermBan();
-        }
-
-        // B. Is he in Row A? (VIP)
-        if (rowA.includes(userName)) {
+        if (data.vip && data.vip.includes(userName)) {
             localStorage.setItem('vip_safe_user', 'true');
             return;
         }
 
-        // C. Is he in Row B? (Trusted)
-        if (rowB.includes(userName)) {
+        if (data.trusted && data.trusted.includes(userName)) {
             sessionStorage.setItem('temp_safe_user', 'true');
             return;
         }
 
-        // 7. UNKNOWN USER -> CHALLENGE
+        // 5. UNKNOWN -> NUKE & CUSTOM PROMPT
         triggerNuhUh();
 
         let fails = parseInt(localStorage.getItem('fail_count') || '0');
-        if (fails >= 5) triggerPermBan(); // Catch previous fails
+        if (fails >= 5) triggerPermBan();
 
-        // Slight delay for UI
-        await new Promise(r => setTimeout(r, 200));
-
-        let success = false;
-        
-        // Loop for attempts
-        while (fails < 5) {
-            const attempt = prompt(`Security Verification\nUser: ${userName}\nEnter Password (Attempts left: ${5 - fails})`);
+        // Wait for the custom UI to resolve or reject
+        try {
+            await promptPasswordCustom(data.password, fails);
             
-            if (attempt === password) {
-                success = true;
-                break;
-            } else {
-                fails++;
-                localStorage.setItem('fail_count', fails);
-                if (fails >= 5) {
-                    // Update Backend -> Ban
-                    fetch(API_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: {'Content-Type': 'text/plain'},
-                        body: JSON.stringify({ name: userName, type: 'ban' })
-                    });
-                    triggerPermBan();
-                }
-                alert("Incorrect Password");
-            }
-        }
-
-        // 8. SUCCESS HANDLING
-        if (success) {
+            // SUCCESS (Promise Resolved)
             restoreSite();
             localStorage.removeItem('fail_count');
-            
-            // Set Session Pass
             sessionStorage.setItem('temp_safe_user', 'true');
-
-            // Update Backend -> Trust (Row B)
+            
+            // Add to Row B
             fetch(API_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: {'Content-Type': 'text/plain'},
                 body: JSON.stringify({ name: userName, type: 'trust' })
             });
+
+        } catch (finalFails) {
+            // FAILURE (Promise Rejected)
+            // Add to Row C
+            fetch(API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {'Content-Type': 'text/plain'},
+                body: JSON.stringify({ name: userName, type: 'ban' })
+            });
+            triggerPermBan();
         }
 
     } catch (e) {
-        console.log("Check skipped or offline");
+        console.log("System check bypassed or error", e);
     }
 })();
