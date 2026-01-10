@@ -1,49 +1,66 @@
 (async function() {
     // --- CONFIGURATION ---
     const API_URL = 'https://script.google.com/macros/s/AKfycbz0nC6F3F5UHvLLGC1MxlB9RgfyHEGQ1wXCCc75FE3wBjBkLYZ7Ek3VLGJu2czidkpksQ/exec'; 
-    const BG_IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Black_colour.jpg/500px-Black_colour.jpg";
     // ---------------------
 
-    // --- 1. IMMEDIATE NATURAL LOADING SCREEN ---
-    // Runs instantly. White background, simple spinner. Looks innocent.
+    // --- 0. INSTANT CHECKS (Before showing ANY UI) ---
+    
+    function isDeviceBanned() {
+        if (localStorage.getItem('perm_banned_user') === 'true') return true;
+        if (sessionStorage.getItem('perm_banned_user') === 'true') return true;
+        if (document.cookie.indexOf('perm_banned_user=true') > -1) {
+            localStorage.setItem('perm_banned_user', 'true');
+            return true;
+        }
+        return false;
+    }
+
+    // 1. If VIP (Row A) -> STOP SCRIPT (No UI)
+    if (localStorage.getItem('vip_safe_user') === 'true') return;
+
+    // 2. If Trusted Session (Row B) -> STOP SCRIPT (No UI)
+    if (sessionStorage.getItem('temp_safe_user') === 'true') return;
+
+    // 3. If Banned -> Proceed to lock
+    const isBanned = isDeviceBanned();
+
+
+    // --- 1. CLEAN LOADING SCREEN ---
+    
     function applyLoadingScreen() {
         if (document.getElementById('security-overlay')) return;
 
         const style = document.createElement('style');
         style.id = 'security-style';
         style.innerHTML = `
-            /* FREEZE INTERACTION BEHIND SCENES */
+            /* FREEZE INTERACTION */
             body, html { 
                 margin: 0 !important; padding: 0 !important; 
                 width: 100% !important; height: 100% !important; 
                 overflow: hidden !important; 
             }
             
-            /* THE WHITE OVERLAY */
+            /* WHITE OVERLAY */
             #security-overlay { 
                 position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
                 z-index: 2147483647; 
-                background-color: #ffffff; /* Natural White */
+                background-color: #ffffff; 
                 display: flex; flex-direction: column; align-items: center; justify-content: center;
                 pointer-events: auto !important;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             }
 
-            /* THE NATURAL SPINNER */
-            .natural-spinner {
-                border: 4px solid #f3f3f3; /* Light grey */
-                border-top: 4px solid #3498db; /* Blue */
+            /* CLEAN SPINNER */
+            .clean-spinner {
+                width: 40px; height: 40px;
+                border: 3px solid rgba(0,0,0,0.1);
                 border-radius: 50%;
-                width: 50px; height: 50px;
-                animation: spin 1s linear infinite;
+                border-top-color: #333;
+                animation: spin 0.8s ease-in-out infinite;
+                margin-bottom: 20px;
             }
 
-            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-            /* BLACK BACKGROUND (Hidden by default, used for Ban/Lock) */
-            #security-bg {
-                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                object-fit: cover; z-index: -1; display: none;
-            }
+            @keyframes spin { to { transform: rotate(360deg); } }
 
             /* HIDE SITE CONTENT */
             body > *:not(#security-overlay):not(#security-style) { display: none !important; }
@@ -53,37 +70,15 @@
         const overlay = document.createElement('div');
         overlay.id = 'security-overlay';
         
-        // Hidden Black BG Image (Preloaded for smooth transition if needed)
-        const img = document.createElement('img');
-        img.id = 'security-bg';
-        img.src = BG_IMAGE_URL;
-        
-        // The Spinner
         const spinner = document.createElement('div');
         spinner.id = 'loading-spinner';
-        spinner.className = 'natural-spinner';
+        spinner.className = 'clean-spinner';
 
-        overlay.appendChild(img);
         overlay.appendChild(spinner);
         document.body.appendChild(overlay);
     }
 
-    // Activate immediately
-    applyLoadingScreen();
-
-
-    // --- 2. TRANSITION HELPERS ---
-
-    // Switch from "Nice White Screen" to "Dark Lockdown Mode"
-    function activateDarkLockdown() {
-        const overlay = document.getElementById('security-overlay');
-        const bg = document.getElementById('security-bg');
-        const spinner = document.getElementById('loading-spinner');
-        
-        if (overlay) overlay.style.backgroundColor = 'black'; // Fallback
-        if (bg) bg.style.display = 'block'; // Show Black Image
-        if (spinner) spinner.remove(); // Remove innocent spinner
-    }
+    // --- 2. TRANSITION & UTILS ---
 
     function setBanStatus() {
         localStorage.setItem('perm_banned_user', 'true');
@@ -93,29 +88,29 @@
         document.cookie = "perm_banned_user=true; expires=" + d.toUTCString() + "; path=/";
     }
 
-    function isDeviceBanned() {
-        if (localStorage.getItem('perm_banned_user') === 'true') return true;
-        if (sessionStorage.getItem('perm_banned_user') === 'true') return true;
-        if (document.cookie.indexOf('perm_banned_user=true') > -1) {
-            setBanStatus(); return true;
-        }
-        return false;
+    // Switch from Spinner to Input Form (No background change, just content swap)
+    function showContentContainer() {
+        const spinner = document.getElementById('loading-spinner');
+        if (spinner) spinner.remove();
     }
 
     function triggerPermBan() {
-        activateDarkLockdown(); // Switch to black
+        applyLoadingScreen(); // Ensure UI exists
         setBanStatus();
-        
-        // Add simple ban text if not present
+        showContentContainer(); // Clear spinner
+
         const overlay = document.getElementById('security-overlay');
-        if (overlay && !document.getElementById('ban-text')) {
-            const txt = document.createElement('h1');
-            txt.id = 'ban-text';
-            txt.innerText = "ACCESS PERMANENTLY DENIED";
-            txt.style.color = "red";
-            txt.style.fontFamily = "Courier New, monospace";
-            overlay.appendChild(txt);
-        }
+        overlay.innerHTML = ''; // Clear everything
+        
+        // Professional Ban Message
+        const container = document.createElement('div');
+        container.style.textAlign = 'center';
+        container.innerHTML = `
+            <h1 style="font-size: 24px; font-weight: 600; color: #111; margin-bottom: 10px;">Access Restricted</h1>
+            <p style="color: #666; font-size: 14px;">Your device has been permanently blocked from accessing this resource.</p>
+        `;
+        overlay.appendChild(container);
+        
         throw new Error("Banned");
     }
 
@@ -124,56 +119,59 @@
         const style = document.getElementById('security-style');
         if (overlay) overlay.remove();
         if (style) style.remove();
-        
         const hidden = document.querySelectorAll('body > *');
         hidden.forEach(el => el.style.removeProperty('display'));
     }
 
-    // --- 3. PASSWORD UI ---
+    // --- 3. PROFESSIONAL PASSWORD PROMPT ---
 
     function promptPasswordCustom(correctPassword, startFails) {
         return new Promise((resolve, reject) => {
-            activateDarkLockdown(); // Switch from White Spinner to Black BG
-
+            showContentContainer(); // Remove spinner
+            
             const overlay = document.getElementById('security-overlay');
             
-            // Create Login Box
-            const container = document.createElement('div');
-            container.id = 'custom-lock-container';
-            container.style.cssText = `
-                position: relative; z-index: 20;
-                background: rgba(10, 10, 10, 0.95); border: 2px solid red; 
-                box-shadow: 0 0 20px red; color: red; padding: 30px; 
-                font-family: 'Courier New', monospace; text-align: center; 
-                width: 320px; border-radius: 10px;
+            // Clean Card
+            const card = document.createElement('div');
+            card.style.cssText = `
+                background: white; 
+                padding: 40px; 
+                border-radius: 12px; 
+                box-shadow: 0 10px 40px rgba(0,0,0,0.08); 
+                width: 320px; 
+                text-align: center;
+                animation: fadeIn 0.4s ease-out;
             `;
 
-            container.innerHTML = `
-                <h2 style="margin: 0 0 20px 0; text-transform: uppercase; font-size: 24px;">System Locked</h2>
-                <input type="password" id="lock-input" style="
-                    width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box;
-                    background: #222; border: 1px solid #555; color: white; text-align: center; font-size: 18px;
-                " placeholder="Enter Password" autofocus>
+            // Inner HTML (Clean Inputs)
+            card.innerHTML = `
+                <style>
+                    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                    .sec-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; outline: none; transition: 0.2s; box-sizing: border-box; }
+                    .sec-input:focus { border-color: #333; }
+                    .sec-btn { width: 100%; padding: 12px; background: #111; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s; box-sizing: border-box; }
+                    .sec-btn:hover { background: #333; }
+                    .sec-link { margin-top: 15px; font-size: 12px; color: #666; cursor: pointer; text-decoration: none; display: inline-block; }
+                    .sec-link:hover { color: #111; }
+                </style>
                 
-                <div id="lock-status" style="height: 20px; font-size: 12px; color: yellow; margin-bottom: 15px;"></div>
+                <h2 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #111;">Security Check</h2>
+                <p style="margin: 0 0 25px 0; font-size: 13px; color: #666;">Please verify your identity to continue.</p>
                 
-                <button id="lock-btn" style="
-                    background: red; color: white; border: none; padding: 10px 20px; margin-bottom: 10px;
-                    cursor: pointer; font-weight: bold; text-transform: uppercase; width: 100%; box-sizing: border-box;
-                ">Unlock</button>
-
-                <button id="request-btn" style="
-                    background: transparent; color: #888; border: 1px solid #555; padding: 5px 10px; 
-                    cursor: pointer; font-size: 12px; width: 100%; box-sizing: border-box;
-                ">Request Access</button>
+                <input type="password" id="sec-pass" class="sec-input" placeholder="Password" autofocus>
+                <div id="sec-error" style="height: 15px; font-size: 12px; color: #d32f2f; margin-bottom: 10px; opacity: 0;"></div>
+                
+                <button id="sec-submit" class="sec-btn">Verify</button>
+                <br>
+                <a id="sec-request" class="sec-link">Request Access</a>
             `;
 
-            overlay.appendChild(container);
+            overlay.appendChild(card);
 
-            const input = document.getElementById('lock-input');
-            const unlockBtn = document.getElementById('lock-btn');
-            const requestBtn = document.getElementById('request-btn');
-            const status = document.getElementById('lock-status');
+            const input = document.getElementById('sec-pass');
+            const submitBtn = document.getElementById('sec-submit');
+            const requestBtn = document.getElementById('sec-request');
+            const errorMsg = document.getElementById('sec-error');
             let fails = startFails;
 
             const checkPass = () => {
@@ -183,39 +181,35 @@
                     fails++;
                     localStorage.setItem('fail_count', fails);
                     input.value = '';
+                    
                     if (fails >= 5) {
                         reject(fails);
                     } else {
-                        status.innerText = `ACCESS DENIED. Attempts: ${5 - fails}`;
-                        status.style.color = 'red';
+                        // Shake effect or error msg
+                        errorMsg.innerText = `Incorrect password. Attempts: ${5 - fails}`;
+                        errorMsg.style.opacity = '1';
                     }
                 }
             };
 
-            unlockBtn.onclick = checkPass;
+            submitBtn.onclick = checkPass;
             requestBtn.onclick = () => { window.location.href = 'ticket.html'; };
             input.onkeydown = (e) => { if (e.key === 'Enter') checkPass(); };
             
-            status.innerText = `Attempts remaining: ${5 - fails}`;
             input.focus();
         });
     }
 
-    // --- 4. MAIN LOGIC ---
+    // --- 4. EXECUTION ---
 
     try {
-        // 1. Check Device Ban
-        if (isDeviceBanned()) triggerPermBan();
+        // Apply White Loading Screen Immediately (unless trusted)
+        applyLoadingScreen();
 
-        // 2. Check Cache
-        if (localStorage.getItem('vip_safe_user') === 'true') {
-            restoreSite(); return;
-        }
-        if (sessionStorage.getItem('temp_safe_user') === 'true') {
-            restoreSite(); return;
-        }
+        // 1. Check if actually banned
+        if (isBanned) triggerPermBan();
 
-        // 3. Identify User
+        // 2. Identify User
         let userName = null;
         try {
             const mbs = JSON.parse(localStorage.getItem('mbsData'));
@@ -230,17 +224,15 @@
         }
 
         if (!userName) {
-            restoreSite(); return; // Guest
+            restoreSite(); return;
         }
 
-        // 4. Fetch
+        // 3. Fetch Data
         const response = await fetch(API_URL);
-        if (!response.ok) {
-            restoreSite(); return; // Fail safe
-        }
+        if (!response.ok) { restoreSite(); return; }
         const data = await response.json();
 
-        // 5. Check Lists
+        // 4. Validate User
         if (data.banned && data.banned.includes(userName)) triggerPermBan();
         
         if (data.vip && data.vip.includes(userName)) {
@@ -255,7 +247,7 @@
             return;
         }
 
-        // 6. Challenge Unknown
+        // 5. Challenge Unknown
         let fails = parseInt(localStorage.getItem('fail_count') || '0');
         if (fails >= 5) triggerPermBan();
 
@@ -275,7 +267,7 @@
             });
 
         } catch (finalFails) {
-            // Failure
+            // Failed
             fetch(API_URL, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -286,6 +278,7 @@
         }
 
     } catch (e) {
-        console.log("Process complete");
+        // Silent fail
+        restoreSite();
     }
 })();
