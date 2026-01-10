@@ -24,7 +24,7 @@
         
         const caption = document.createElement('div');
         caption.id = 'brainrot-caption';
-        caption.innerText = "Nuh uh - Verification Required";
+        caption.innerText = " ";
 
         document.body.appendChild(img);
         document.body.appendChild(caption);
