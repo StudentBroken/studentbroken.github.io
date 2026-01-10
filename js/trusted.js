@@ -2,7 +2,7 @@
 
 (async function() {
     // --- PASTE YOUR NEW DEPLOYED URL HERE ---
-    const API_URL = 'https://script.google.com/macros/s/AKfycbx1zib3LDFjnBZzcOkxHRpXk_8nPD2ZeSGaL7jWtb71Xcfjl_N_GyOCg_NCP3y3p8KC6g/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwF30XYl_yCgRBVx7eZenJi6h5Uc00wHHRNppI1sbTF4FxUYHEMMffiNkvg6XYk8G4O3Q/exec'; 
     // ----------------------------------------
 
     // --- 1. DEFINE VISUALS (NUKE & RESTORE) ---
