@@ -92,7 +92,7 @@
                 </svg>
             </div>
             <h1 style="font-size: 24px; font-weight: 600; color: #111; margin: 0 0 10px 0;">Access Restricted</h1>
-            <p style="color: #666; font-size: 14px; max-width: 300px;">Your access to this resource has been permanently revoked.</p>
+            <p style="color: #666; font-size: 14px; max-width: 300px;">No access</p>
         `;
         document.body.appendChild(wrapper);
     }
@@ -124,7 +124,7 @@
                     .sec-link:hover { color: #111; text-decoration: underline; }
                 </style>
                 <h2 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 600; color: #111;"> Verification</h2>
-                <p style="margin: 0 0 25px 0; font-size: 13px; color: #666;">This session requires authorization.</p>
+                <p style="margin: 0 0 25px 0; font-size: 13px; color: #666;">     </p>
                 <input type="password" id="sec-pass" class="sec-input" placeholder="Password" autofocus>
                 <div id="sec-error" style="height: 15px; font-size: 12px; color: #d32f2f; margin-bottom: 10px; opacity: 0; font-weight: 500;"></div>
                 <button id="sec-submit" class="sec-btn">Continue</button>
