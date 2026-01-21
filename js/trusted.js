@@ -3,27 +3,23 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbz0nC6F3F5UHvLLGC1MxlB9RgfyHEGQ1wXCCc75FE3wBjBkLYZ7Ek3VLGJu2czidkpksQ/exec'; 
     // ---------------------
 
-    // ---first check list A---
+    // --- 0. INSTANT CHECKS ---
     
-    // stop script if user is in list A
+    // Stop script if VIP (List A)
     if (localStorage.getItem('vip_safe_user') === 'true') return;
 
-    // stop script is user is in list B
+    // Stop script if Trusted Session (List B)
     if (sessionStorage.getItem('temp_safe_user') === 'true') return;
 
-
-    // If user is in list C or unknown
-    // delete everything
+    // --- 1. THE NUKE (Immediate Lockdown) ---
     try {
         document.body.innerHTML = ''; 
-        // Stop any further loading if placed in head
         if (window.stop) window.stop();
     } catch(e) {
-        // Fallback if body doesn't exist yet (script in head)
         document.documentElement.innerHTML = '<body></body>';
     }
     
-    // set black image
+    // Set base styles for the "Void"
     document.body.style.margin = "0";
     document.body.style.padding = "0";
     document.body.style.backgroundColor = "#ffffff";
@@ -47,49 +43,33 @@
 
     // A. Loading Spinner 
     function renderLoading() {
-        document.body.innerHTML = ''; // Clear
-        
+        document.body.innerHTML = ''; 
         const wrapper = document.createElement('div');
         wrapper.style.cssText = "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw;";
-        
         const spinner = document.createElement('div');
         spinner.style.cssText = `
-            width: 40px; height: 40px;
-            border: 3px solid rgba(0,0,0,0.1);
-            border-radius: 50%;
-            border-top-color: #333;
-            animation: spin 0.8s ease-in-out infinite;
+            width: 40px; height: 40px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #333; animation: spin 0.8s ease-in-out infinite;
         `;
-        
-        // Add animation keyframes
         const style = document.createElement('style');
         style.innerHTML = `@keyframes spin { to { transform: rotate(360deg); } }`;
         document.head.appendChild(style);
-
         wrapper.appendChild(spinner);
         document.body.appendChild(wrapper);
     }
 
     // B. Ban Screen
     function renderBan() {
-        // Set Ban Flags in local storage session storage and cookie documents for permanent device ban
         localStorage.setItem('perm_banned_user', 'true');
         sessionStorage.setItem('perm_banned_user', 'true');
         const d = new Date(); d.setTime(d.getTime() + (365*24*60*60*1000));
         document.cookie = "perm_banned_user=true; expires=" + d.toUTCString() + "; path=/";
 
-        document.body.innerHTML = ''; // Clear
-        
+        document.body.innerHTML = ''; 
         const wrapper = document.createElement('div');
         wrapper.style.cssText = "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center;";
-        
         wrapper.innerHTML = `
             <div style="margin-bottom: 20px;">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                </svg>
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
             </div>
             <h1 style="font-size: 24px; font-weight: 600; color: #111; margin: 0 0 10px 0;">Access Restricted</h1>
             <p style="color: #666; font-size: 14px; max-width: 300px;">No access</p>
@@ -97,22 +77,16 @@
         document.body.appendChild(wrapper);
     }
 
-    // C. Password Prompt if user is unknown and not in list C
+    // C. Password Prompt
     function promptPasswordCustom(correctPassword, startFails) {
         return new Promise((resolve, reject) => {
-            document.body.innerHTML = ''; // Clear Spinner
-            
+            document.body.innerHTML = ''; 
             const wrapper = document.createElement('div');
             wrapper.style.cssText = "display: flex; align-items: center; justify-content: center; height: 100vh; background: #fff;";
-            
             const card = document.createElement('div');
             card.style.cssText = `
-                background: white; padding: 40px; border-radius: 12px; 
-                box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 320px; 
-                text-align: center; border: 1px solid #f0f0f0;
-                animation: fadeIn 0.4s ease-out;
+                background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 320px; text-align: center; border: 1px solid #f0f0f0; animation: fadeIn 0.4s ease-out;
             `;
-
             card.innerHTML = `
                 <style>
                     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -123,15 +97,14 @@
                     .sec-link { margin-top: 20px; font-size: 13px; color: #666; cursor: pointer; text-decoration: none; display: inline-block; }
                     .sec-link:hover { color: #111; text-decoration: underline; }
                 </style>
-                <h2 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 600; color: #111;"> Verification</h2>
-                <p style="margin: 0 0 25px 0; font-size: 13px; color: #666;">     </p>
+                <h2 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 600; color: #111;">Verification</h2>
+                <p style="margin: 0 0 25px 0; font-size: 13px; color: #666;"></p>
                 <input type="password" id="sec-pass" class="sec-input" placeholder="Password" autofocus>
                 <div id="sec-error" style="height: 15px; font-size: 12px; color: #d32f2f; margin-bottom: 10px; opacity: 0; font-weight: 500;"></div>
                 <button id="sec-submit" class="sec-btn">Continue</button>
                 <br>
                 <a id="sec-request" class="sec-link">Request Access</a>
             `;
-
             wrapper.appendChild(card);
             document.body.appendChild(wrapper);
 
@@ -167,15 +140,13 @@
     // --- 4. EXECUTION FLOW ---
 
     try {
-        // 1. Initial State: Nuke & Load
         renderLoading();
 
-        // 2. Check Ban
         if (isDeviceBanned()) {
             renderBan(); return;
         }
 
-        // 3. Identify User
+        // --- FIX: Logic changed here ---
         let userName = null;
         try {
             const mbs = JSON.parse(localStorage.getItem('mbsData'));
@@ -189,40 +160,39 @@
             } catch(e){}
         }
 
-        if (!userName) {
-            // No User -> Guest -> nuke
-            // Loading after nuke, flag to prevent looping if user registers
-            // Guests without Id will be considered as list C temporarily
-            renderBan(); return;
-        }
-
-        // 4. Fetch Data
+        // Fetch Data
         const response = await fetch(API_URL);
         if (!response.ok) { renderBan(); return; }
         const data = await response.json();
 
-        // 5. Validate User
-        if (data.banned && data.banned.includes(userName)) {
-            renderBan(); return;
+        // Validate User against lists (only if we have a name)
+        if (userName) {
+            // Check List C (Banned)
+            if (data.banned && data.banned.includes(userName)) {
+                renderBan(); return;
+            }
+            
+            // Check List A (VIP)
+            if (data.vip && data.vip.includes(userName)) {
+                localStorage.setItem('vip_safe_user', 'true');
+                location.reload(); 
+                return;
+            }
+
+            // Check List B (Trusted)
+            if (data.trusted && data.trusted.includes(userName)) {
+                sessionStorage.setItem('temp_safe_user', 'true');
+                location.reload(); 
+                return;
+            }
         }
+
+        // --- UNKNOWN USER (OR NO NAME) -> CHALLENGE ---
+        // If they have no name, they fall through to here instead of being banned immediately.
         
-        // ROW A (VIP)
-        if (data.vip && data.vip.includes(userName)) {
-            localStorage.setItem('vip_safe_user', 'true');
-            location.reload(); // RELOAD TO RESTORE SITE
-            return;
-        }
-
-        // ROW B (Trusted)
-        if (data.trusted && data.trusted.includes(userName)) {
-            sessionStorage.setItem('temp_safe_user', 'true');
-            location.reload(); // RELOAD TO RESTORE SITE
-            return;
-        }
-
-        // 6. Challenge
         let fails = parseInt(localStorage.getItem('fail_count') || '0');
-        if (fails >= 3) { renderBan(); return; }
+        // FIX: Changed from 3 to 5 to match the prompts
+        if (fails >= 5) { renderBan(); return; }
 
         try {
             await promptPasswordCustom(data.password, fails);
@@ -231,29 +201,32 @@
             localStorage.removeItem('fail_count');
             sessionStorage.setItem('temp_safe_user', 'true');
             
-            // Update Backend
-            fetch(API_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {'Content-Type': 'text/plain'},
-                body: JSON.stringify({ name: userName, type: 'trust' })
-            });
+            // Only update backend if we actually have a name
+            if (userName) {
+                fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {'Content-Type': 'text/plain'},
+                    body: JSON.stringify({ name: userName, type: 'trust' })
+                });
+            }
 
-            // RELOAD TO RESTORE SITE
             location.reload();
 
         } catch (finalFails) {
             // FAILURE
-            fetch(API_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {'Content-Type': 'text/plain'},
-                body: JSON.stringify({ name: userName, type: 'ban' })
-            });
+            if (userName) {
+                fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {'Content-Type': 'text/plain'},
+                    body: JSON.stringify({ name: userName, type: 'ban' })
+                });
+            }
             renderBan();
         }
 
     } catch (e) {
-        console.log("Error, could not verify user");
+        console.log("Error verification");
     }
 })();
