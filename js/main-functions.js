@@ -244,47 +244,78 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateSubjectAverage(subject, etapeKey, subjectIndex) {
-        let totalWeightedGrade = 0;
-        let totalCompetencyWeight = 0;
+    let totalWeightedGrade = 0;
+    let totalCompetencyWeight = 0;
 
-        subject.competencies.forEach((comp, compIndex) => {
-            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-            if (!compWeightMatch) return;
-            const compWeight = parseFloat(compWeightMatch[1]);
+    subject.competencies.forEach((comp, compIndex) => {
+        const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+        if (!compWeightMatch) return;
+        const compWeight = parseFloat(compWeightMatch[1]);
 
-            let totalAssignmentGrade = 0;
-            let totalAssignmentWeight = 0;
+        // 1. GROUP BY CATEGORY
+        let categoryAggregates = {}; 
+        
+        comp.assignments.forEach((assign, assignIndex) => {
+            const dataPath = `${etapeKey}-${subjectIndex}-${compIndex}-${assignIndex}`;
+            
+            // Get inputs from DOM
+            const pondInput = document.querySelector(`.pond-input-field[data-path="${dataPath}"]`);
+            if (!pondInput) return;
 
-            comp.assignments.forEach((assign, assignIndex) => {
-                const dataPath = `${etapeKey}-${subjectIndex}-${compIndex}-${assignIndex}`;
-                const pondInput = document.querySelector(`.pond-input-field[data-path="${dataPath}"]`);
-                const gradeContainer = pondInput.closest('tr').querySelector('.grade-container');
-                const gradeInput = gradeContainer.querySelector('.grade-input-field');
+            const gradeContainer = pondInput.closest('tr').querySelector('.grade-container');
+            const gradeInput = gradeContainer.querySelector('.grade-input-field');
 
-                let grade = null;
-                if (!gradeInput.classList.contains('hidden') && gradeInput.value.trim() !== '') {
-                    grade = parseFloat(gradeInput.value);
-                } else {
-                    grade = getNumericGrade(assign.result);
-                }
+            let grade = null;
+            if (!gradeInput.classList.contains('hidden') && gradeInput.value.trim() !== '') {
+                grade = parseFloat(gradeInput.value);
+            } else {
+                grade = getNumericGrade(assign.result);
+            }
 
-                let weight = parseFloat(pondInput.value);
+            let weight = parseFloat(pondInput.value);
 
-                if (grade !== null && !isNaN(grade) && !isNaN(weight) && weight > 0) {
-                    totalAssignmentGrade += grade * weight;
-                    totalAssignmentWeight += weight;
-                }
-            });
+            // Use the category name as the grouping key
+            // If parser missed category, use index to treat as standalone
+            const categoryKey = assign.category ? assign.category.trim() : `_uncat_${assignIndex}`;
 
-            if (totalAssignmentWeight > 0) {
-                const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
-                totalWeightedGrade += competencyAverage * compWeight;
-                totalCompetencyWeight += compWeight;
+            if (!categoryAggregates[categoryKey]) {
+                categoryAggregates[categoryKey] = { weightedSum: 0, weightSum: 0, hasData: false };
+            }
+
+            if (grade !== null && !isNaN(grade) && !isNaN(weight) && weight > 0) {
+                // Add to the CATEGORY'S internal total
+                categoryAggregates[categoryKey].weightedSum += grade * weight;
+                categoryAggregates[categoryKey].weightSum += weight;
+                categoryAggregates[categoryKey].hasData = true;
             }
         });
 
-        return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
-    }
+        // 2. CALCULATE CATEGORY AVERAGES & COMBINE EQUALLY
+        let sumCategoryAverages = 0;
+        let countActiveCategories = 0;
+
+        Object.values(categoryAggregates).forEach(cat => {
+            if (cat.hasData && cat.weightSum > 0) {
+                // Calculate the average for this specific category (e.g. the 95/5 split)
+                const categoryAverage = cat.weightedSum / cat.weightSum;
+                
+                // Add to the total sum of category averages
+                sumCategoryAverages += categoryAverage;
+                countActiveCategories++;
+            }
+        });
+
+        // 3. FINAL COMPETENCY CALCULATION
+        // If we have 2 categories, we divide by 2 (50/50 split), regardless of internal weights (1 vs 100)
+        if (countActiveCategories > 0) {
+            const competencyAverage = sumCategoryAverages / countActiveCategories;
+            totalWeightedGrade += competencyAverage * compWeight;
+            totalCompetencyWeight += compWeight;
+        }
+    });
+
+    return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
+}
 
     function getUnits() {
         const { niveau, unitesMode, customUnites } = mbsData.settings || {};
